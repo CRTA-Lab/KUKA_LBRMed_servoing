@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<RoboticsAPIData version="3">
+    <world>
+        <gravitation x="0.0" y="0.0" z="9.81"/>
+        <frame id="_b787cc10-41bb-407a-8535-8777175c841b" name="fixed_marker">
+            <transformation a="0.4220440198080725" b="0.6071466641135648" c="0.1961566808627802" x="533.5944705907999" y="37.933903721677325" z="5.288878516508348"/>
+            <additionalInformation>
+                <info key="LastModificationTime" type="java.lang.Long" value="1729259291882"/>
+                <info key="UseAsBaseForJogging" type="java.lang.Boolean" value="true"/>
+                <info measurementMethod="Base3Point" timestamp="1729259291882" type="com.kuka.roboticsAPI.deviceModel.MeasurementInformation"/>
+            </additionalInformation>
+            <frame id="_1e9e5212-6c54-4ef6-84e1-0c27980a6463" name="mobile_frame">
+                <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
+                <additionalInformation>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1729505831082"/>
+                </additionalInformation>
+                <redundancyData>
+                    <redundancy transformationProviderName="legacy" type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy">
+                        <info type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy$E1Parameter" value="0.3" valueType="java.lang.Double"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$TurnParameter" value="104" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$StatusParameter" value="6" valueType="java.lang.Integer"/>
+                    </redundancy>
+                </redundancyData>
+                <frame id="_1c2ee89f-0f80-4049-afac-f7883d02dfaa" name="target">
+                    <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
+                    <additionalInformation>
+                        <info key="LastModificationTime" type="java.lang.Long" value="1729505817068"/>
+                    </additionalInformation>
+                    <redundancyData>
+                        <redundancy transformationProviderName="legacy" type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy">
+                            <info type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy$E1Parameter" value="0.3" valueType="java.lang.Double"/>
+                            <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$StatusParameter" value="6" valueType="java.lang.Integer"/>
+                            <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$TurnParameter" value="104" valueType="java.lang.Integer"/>
+                        </redundancy>
+                    </redundancyData>
+                </frame>
+            </frame>
+        </frame>
+    </world>
+    <objectTemplates>
+        <toolTemplate class="" defaultMotionFrameRef="/pointer_TCP" name="pointer">
+            <frames>
+                <frame id="_ebe71fc3-f9da-4cf5-9e8d-1a20780bcb7e" name="pointer_TCP">
+                    <transformation a="0.0" b="0.0" c="0.0" x="-0.2732482613757375" y="0.46885812208201716" z="84.87610140421069"/>
+                    <measurementTranslation calculationError="0.8035636817932434" method="XYZ4Point" timestamp="1729077828738"/>
+                </frame>
+            </frames>
+            <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
+        </toolTemplate>
+    </objectTemplates>
+</RoboticsAPIData>
