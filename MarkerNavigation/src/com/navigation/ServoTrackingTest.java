@@ -84,7 +84,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 
 	public void run() {
 		
-		getApplicationControl().setApplicationOverride(0.5); // postavljanje brzine kretanja robota u programu
+		getApplicationControl().setApplicationOverride(0.7); // postavljanje brzine kretanja robota u programu
 		
 		SmartServo motion = new SmartServo(robot.getCurrentJointPosition()); // objekt za kontrolu servo kretanja
 		motion.setMinimumTrajectoryExecutionTime(20e-3);
@@ -126,7 +126,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		    }
 		    //kopiranje koordinatnog sustava pomicnog markera i tocke unutar tog markera
 		    Frame mobile_frame = marker.getChild("mobile_frame").copy();
-		    Frame target = marker.getChild("mobile_frame/target").copyWithRedundancy();
+		    Frame target = marker.getChild("target").copyWithRedundancy();
 		    
 		    Vector trans = Vector.of(data[0], data[1], data[2]);
 		    Rotation rot = Rotation.ofRad(data[3], data[4], data[5]);
@@ -134,6 +134,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		    
 		    mobile_frame.transform(fwdTransform); // transformacija koordinatnog sustava pomicnog markera  prema podatcima s kamere
 		    
+		    target.setParent(mobile_frame);
 		    target.transform(Transformation.ofTranslation(0, 0, -30)); // definiranje tocke 30mm "iza" pomicnog markera
 		    
 		    runtime.setDestination(target); // zadavanje odredista servo controli

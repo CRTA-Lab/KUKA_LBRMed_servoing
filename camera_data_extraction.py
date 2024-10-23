@@ -8,7 +8,7 @@ from scipy.spatial.transform import Rotation
 
 def setup_TCP():
     '''
-    Funkcija za konfiguraciju TCP/IP veze sa robotom
+    Function for configuration of TCP/IP connection with the robot
     in : none
     out : socket
     '''
@@ -19,9 +19,9 @@ def setup_TCP():
 
 def camera_setup():
     '''
-    Funkcija za konfiguraciju veze sa kamerom i pokretanje praćenja markera
+    Fonction fo confiugration of the connection to the camera and initiation of the tracking
     in : none
-    out : NDITracker - objekt za upravljanje veze sa kamerom
+    out : NDITracker - camera comunication object
     '''
     SETTINGS = {
         "tracker type": "vega",
@@ -33,12 +33,23 @@ def camera_setup():
     TRACKER.start_tracking()
     return TRACKER
 
+def avg_filter(data):
+    trans = data[0,:3]
+    rot = data[0,3:]
+    order = data.shape[0]
+    for i in range(6):
+        for j in range(1,order):
+            if i < 3:
+                trans[i] += data[j,i]
+            else:
+                rot[i-3] += data[j,i]
+    return trans/order,rot/order
+
 def calculate_transform(handles,transforms):
     '''
-    Funkcija za izračun transformacije između fiksnog i pomičnog markera iz njihovih položaja u koordinatnom sustavu kamere
+    Function for calculation of transformation between fixed and mobile marker from their transforms in coordinate frame of the camera
     in :    handles - lista prepoznatih markera
             transforms - lista matrica transformcija pojedinih markera u odnosu na koordinatni sustav kamere
-         
     out:    trans - translacijski vektor pomičnog markera u koordinatnom sustavu fiksnog markera
             rot_angles - vektor eulerovih kutova zakreta pomičnog markera u koordinatnom sustavu fiksnog markera, eulerovi kutovi su u redosljedu Z,Y,X kompatibilnim sa KUKA kontrolerom
     '''
@@ -94,6 +105,9 @@ def main():
     
 
     prev_frame = 0
+    n = 3
+    k = 0
+    data_buffer = np.zeros([n,6])
 
     while 1:
         port_handles, timestamps, framenumbers, tracking, quality = tracker.get_frame()
@@ -101,10 +115,20 @@ def main():
 
             try:
                 trans,rot = calculate_transform(port_handles,tracking)
-                
-                msg = create_msg(trans,rot)
+                if np.isnan(trans).any() or np.isnan(rot).any():
+                    continue
+                data_buffer = np.vstack((data_buffer,np.hstack((trans,rot))))
+                data_buffer = np.delete(data_buffer,0,0)
+                if k < n:
+                    k += 1
+                else:
+                    trans,rot = avg_filter(data_buffer) 
 
-                client.send(bytes(msg,'UTF-8'))
+                    msg = create_msg(trans,rot)
+
+                    client.send(bytes(msg,'UTF-8'))
+                
+                prev_frame = framenumbers[0]
 
             except Exception as e:
                 print('Dogodila se greška:\n{}'.format(e))
@@ -112,6 +136,8 @@ def main():
                 client.close()
                 return
             #time.sleep(0.5)
+
+
         
 
 if __name__ == '__main__':
