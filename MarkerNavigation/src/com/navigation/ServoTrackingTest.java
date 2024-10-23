@@ -55,6 +55,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 	
 	private Tool pointer;
 	private ObjectFrame marker;
+	private Frame curr_pos;
 	
 	private BufferedReader in;
 	private PrintWriter out;
@@ -64,7 +65,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 
 	@Override
 	public void initialize(){
-		pointer = getApplicationData().createFromTemplate("pointer"); // stvaranje alata iz tool templatea
+		pointer = getApplicationData().createFromTemplate("pointer_w_marker"); // stvaranje alata iz tool templatea
 		pointer.attachTo(robot.getFlange()); // spajanje alta na prihvatnicu robota
 		marker = getApplicationData().getFrame("/fixed_marker"); // ucitavanje fiksnog markera
 		try {
@@ -97,7 +98,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		}*/
 		
 		
-		IMotionContainer container = pointer.getFrame("pointer_TCP").moveAsync(motion);	// motion container za upravljanje kretanjama	
+		IMotionContainer container = pointer.getFrame("TCP").moveAsync(motion);	// motion container za upravljanje kretanjama	
 		ISmartServoRuntime runtime = motion.getRuntime(); // servo runtime objekt za opravljanje parametricma servo kretanja
 		
 		while (true){
@@ -135,9 +136,12 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		    mobile_frame.transform(fwdTransform); // transformacija koordinatnog sustava pomicnog markera  prema podatcima s kamere
 		    
 		    target.setParent(mobile_frame);
-		    target.transform(Transformation.ofTranslation(0, 0, -30)); // definiranje tocke 30mm "iza" pomicnog markera
+		    target.transform(Transformation.ofTranslation(0, 0, -40)); // definiranje tocke 30mm "iza" pomicnog markera
+		    target.transform(Transformation.ofDeg(0, 0, 0, 0, 0, 45));
 		    
 		    runtime.setDestination(target); // zadavanje odredista servo controli
+		    curr_pos = runtime.getCurrentCartesianPosition(pointer.getFrame("TCP"), mobile_frame);
+		    out.println(curr_pos.toString());
 			}   
 	    
 	}

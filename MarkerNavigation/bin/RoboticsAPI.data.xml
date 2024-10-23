@@ -25,7 +25,7 @@
             <frame id="_1c2ee89f-0f80-4049-afac-f7883d02dfaa" name="target">
                 <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
                 <additionalInformation>
-                    <info key="LastModificationTime" type="java.lang.Long" value="1729505817068"/>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1729682794624"/>
                 </additionalInformation>
                 <redundancyData>
                     <redundancy transformationProviderName="legacy" type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy">
@@ -38,11 +38,20 @@
         </frame>
     </world>
     <objectTemplates>
-        <toolTemplate class="" defaultMotionFrameRef="/pointer_TCP" name="pointer">
+        <toolTemplate class="" defaultMotionFrameRef="/TCP" name="pointer">
             <frames>
-                <frame id="_ebe71fc3-f9da-4cf5-9e8d-1a20780bcb7e" name="pointer_TCP">
+                <frame id="_ebe71fc3-f9da-4cf5-9e8d-1a20780bcb7e" name="TCP">
                     <transformation a="0.0" b="0.0" c="0.0" x="-0.2732482613757375" y="0.46885812208201716" z="84.87610140421069"/>
                     <measurementTranslation calculationError="0.8035636817932434" method="XYZ4Point" timestamp="1729077828738"/>
+                </frame>
+            </frames>
+            <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
+        </toolTemplate>
+        <toolTemplate class="" name="pointer_w_marker">
+            <frames>
+                <frame id="_074781f8-9c41-4245-a602-53f1eca6d773" name="TCP">
+                    <transformation a="0.0" b="0.0" c="0.0" x="-0.7276904179292761" y="0.31453305620462496" z="110.02661910276828"/>
+                    <measurementTranslation calculationError="2.2240018575254603" method="XYZ4Point" timestamp="1729700058982"/>
                 </frame>
             </frames>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>

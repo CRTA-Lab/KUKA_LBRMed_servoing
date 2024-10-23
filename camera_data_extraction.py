@@ -5,6 +5,7 @@ import time
 import numpy as np
 import numpy.linalg as lin
 from scipy.spatial.transform import Rotation
+import matplotlib.pyplot as plt
 
 def setup_TCP():
     '''
@@ -26,7 +27,9 @@ def camera_setup():
     SETTINGS = {
         "tracker type": "vega",
         "ip address": "169.254.121.249",
-        "romfiles" : ["C:\\Files\\Polaris_integration\\markeri\\8700339.rom","C:\\Files\\Polaris_integration\\markeri\\FEM0001.rom"]
+        "romfiles" : ["C:\\Files\\Polaris_integration\\markeri\\8700339.rom",
+                      "C:\\Files\\Polaris_integration\\markeri\\FEM0001.rom",
+                      "C:\\Files\\Polaris_integration\\markeri\\8700338.rom"]
         }
     TRACKER = NDITracker(SETTINGS)
 
@@ -45,6 +48,7 @@ def avg_filter(data):
                 rot[i-3] += data[j,i]
     return trans/order,rot/order
 
+
 def calculate_transform(handles,transforms):
     '''
     Function for calculation of transformation between fixed and mobile marker from their transforms in coordinate frame of the camera
@@ -57,6 +61,7 @@ def calculate_transform(handles,transforms):
         T_st = np.array(transforms[0])
         T_din = np.array(transforms[1])
     else:
+        print('a jebiga')
         T_st = np.array(transforms[1])
         T_din = np.array(transforms[0])
 
@@ -93,6 +98,24 @@ def create_msg(trans,rot):
     msg += '\n'
     return msg
 
+def calculate_distance(tramsforms):
+    target = tramsforms[1]
+    tool = tramsforms[2]
+
+    T_targ_tool = np.matmul(lin.inv(target),tool)
+
+    transl = T_targ_tool[:3,-1]
+    return transl
+
+
+def parse_msg(msg):
+    msg_list = msg.split(' ')
+    pos = []
+    for i in msg_list[1:4]:
+        temp = i.split('=')
+        pos.append(float(temp[1]))
+    return np.array(pos)
+    
 
 
 
@@ -108,6 +131,8 @@ def main():
     n = 3
     k = 0
     data_buffer = np.zeros([n,6])
+    position_kamera = np.zeros([1,3])
+    position_robot = np.zeros([1,3])
 
     while 1:
         port_handles, timestamps, framenumbers, tracking, quality = tracker.get_frame()
@@ -127,6 +152,11 @@ def main():
                     msg = create_msg(trans,rot)
 
                     client.send(bytes(msg,'UTF-8'))
+                    incoming_msg = client.recv(1024)
+
+                    position_kamera = np.vstack((position_kamera,calculate_distance(tracking)))
+                    position_robot = np.vstack((position_robot,parse_msg(str(incoming_msg))))
+
                 
                 prev_frame = framenumbers[0]
 
@@ -134,6 +164,14 @@ def main():
                 print('Dogodila se greška:\n{}'.format(e))
                 tracker.stop_tracking()
                 client.close()
+                #data = np.hstack((position_kamera,position_robot))
+                #np.savetxt('saved_data\\data{}'.format(time.time),data,delimiter=',')
+                plt.subplot(2,1,1)
+                plt.plot(np.arange(len(position_kamera)),position_kamera[:,0],np.arange(len(position_kamera)),position_kamera[:,1],np.arange(len(position_kamera)),position_kamera[:,2])
+                plt.subplot(2,1,2)
+                plt.plot(np.arange(len(position_robot)),position_robot[:,0],np.arange(len(position_robot)),position_robot[:,1],np.arange(len(position_robot)),position_robot[:,2])
+                plt.show()
+                a = input('')
                 return
             #time.sleep(0.5)
 
