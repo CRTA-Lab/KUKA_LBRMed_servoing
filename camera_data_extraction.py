@@ -1,11 +1,13 @@
 from sksurgerynditracker.nditracker import NDITracker
 import sksurgerycore.transforms.transform_manager as tm
 import socket
-import time
+import datetime
 import numpy as np
 import numpy.linalg as lin
 from scipy.spatial.transform import Rotation
 import matplotlib.pyplot as plt
+from filterpy.kalman import KalmanFilter
+from filterpy.common import Q_discrete_white_noise
 
 def setup_TCP():
     '''
@@ -99,13 +101,21 @@ def create_msg(trans,rot):
     return msg
 
 def calculate_distance(tramsforms):
+    frame = tramsforms[0]
     target = tramsforms[1]
     tool = tramsforms[2]
 
-    T_targ_tool = np.matmul(lin.inv(target),tool)
 
-    transl = T_targ_tool[:3,-1]
-    return transl
+    trans_z = np.array([1,0,0,0,0,1,0,0,0,0,1,-40,0,0,0,1])
+    trans_z.shape = [4,4]
+    target = np.matmul(target,trans_z)
+
+    T_tool = np.matmul(lin.inv(frame),tool)
+    T_target = np.matmul(lin.inv(frame),target)
+
+    tool_pos = T_tool[:3,-1]
+    target_pos = T_target[:3,-1]
+    return tool_pos,target_pos
 
 
 def parse_msg(msg):
@@ -128,11 +138,19 @@ def main():
     
 
     prev_frame = 0
-    n = 3
+    n = 5
     k = 0
     data_buffer = np.zeros([n,6])
-    position_kamera = np.zeros([1,3])
+    position_marker = np.zeros([1,3])
     position_robot = np.zeros([1,3])
+    filter = KalmanFilter(dim_x=6,dim_z=6)
+    filter.x = np.array([100,100,100,0,0,0])
+    filter.F = np.eye(6)
+    filter.H = np.eye(6)
+    filter.R = np.eye(6)*0.12
+    filter.P *= 200
+    #filter.Q = np.eye(6)*0.12
+
 
     while 1:
         port_handles, timestamps, framenumbers, tracking, quality = tracker.get_frame()
@@ -147,15 +165,23 @@ def main():
                 if k < n:
                     k += 1
                 else:
-                    trans,rot = avg_filter(data_buffer) 
+                    trans,rot = avg_filter(data_buffer)
+                    '''filter.predict()
+                    filter.update(np.hstack((trans,rot)))
+                    data = filter.x
+                    trans = data[:3]
+                    rot = data[3:]'''
+
 
                     msg = create_msg(trans,rot)
 
                     client.send(bytes(msg,'UTF-8'))
                     incoming_msg = client.recv(1024)
 
-                    position_kamera = np.vstack((position_kamera,calculate_distance(tracking)))
-                    position_robot = np.vstack((position_robot,parse_msg(str(incoming_msg))))
+                    tool_pos,target_pos = calculate_distance(tracking)
+
+                    position_marker = np.vstack((position_marker,target_pos))
+                    position_robot = np.vstack((position_robot,tool_pos))
 
                 
                 prev_frame = framenumbers[0]
@@ -164,16 +190,27 @@ def main():
                 print('Dogodila se greška:\n{}'.format(e))
                 tracker.stop_tracking()
                 client.close()
-                #data = np.hstack((position_kamera,position_robot))
-                #np.savetxt('saved_data\\data{}'.format(time.time),data,delimiter=',')
-                plt.subplot(2,1,1)
-                plt.plot(np.arange(len(position_kamera)),position_kamera[:,0],np.arange(len(position_kamera)),position_kamera[:,1],np.arange(len(position_kamera)),position_kamera[:,2])
-                plt.subplot(2,1,2)
-                plt.plot(np.arange(len(position_robot)),position_robot[:,0],np.arange(len(position_robot)),position_robot[:,1],np.arange(len(position_robot)),position_robot[:,2])
+                position_marker = np.delete(position_marker,0,0)
+                position_robot = np.delete(position_robot,0,0)
+                data = np.hstack((position_marker,position_robot))
+                now = datetime.datetime.now()
+                np.savetxt('saved_data\\data{}_{}.csv'.format(now.hour,now.minute),data,delimiter=',')
+                plt.subplot(3,1,1)
+                plt.plot(np.arange(len(position_marker)),position_marker[:,0],label='marker')
+                plt.plot(np.arange(len(position_robot)),position_robot[:,0],label='tool')
+                plt.legend()
+                plt.subplot(3,1,2)
+                plt.plot(np.arange(len(position_marker)),position_marker[:,1],label='marker')
+                plt.plot(np.arange(len(position_robot)),position_robot[:,1],label='tool')
+                plt.legend()
+                plt.subplot(3,1,3)
+                plt.plot(np.arange(len(position_marker)),position_marker[:,2],label='marker')
+                plt.plot(np.arange(len(position_robot)),position_robot[:,2],label='tool')
+                plt.legend()
                 plt.show()
-                a = input('')
                 return
             #time.sleep(0.5)
+
 
 
         

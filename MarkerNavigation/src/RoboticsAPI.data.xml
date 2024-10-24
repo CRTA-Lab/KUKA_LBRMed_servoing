@@ -3,11 +3,11 @@
     <world>
         <gravitation x="0.0" y="0.0" z="9.81"/>
         <frame id="_b787cc10-41bb-407a-8535-8777175c841b" name="fixed_marker">
-            <transformation a="0.4220440198080725" b="0.6071466641135648" c="0.1961566808627802" x="533.5944705907999" y="37.933903721677325" z="5.288878516508348"/>
+            <transformation a="0.4278642875627362" b="0.6063252312022822" c="0.203644004323448" x="536.2814360683481" y="-12.025302056552697" z="4.85225565377344"/>
             <additionalInformation>
-                <info key="LastModificationTime" type="java.lang.Long" value="1729259291882"/>
+                <info key="LastModificationTime" type="java.lang.Long" value="1729770646565"/>
                 <info key="UseAsBaseForJogging" type="java.lang.Boolean" value="true"/>
-                <info measurementMethod="Base3Point" timestamp="1729259291882" type="com.kuka.roboticsAPI.deviceModel.MeasurementInformation"/>
+                <info measurementMethod="Base3Point" timestamp="1729770646565" type="com.kuka.roboticsAPI.deviceModel.MeasurementInformation"/>
             </additionalInformation>
             <frame id="_1e9e5212-6c54-4ef6-84e1-0c27980a6463" name="mobile_frame">
                 <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
@@ -25,11 +25,11 @@
             <frame id="_1c2ee89f-0f80-4049-afac-f7883d02dfaa" name="target">
                 <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
                 <additionalInformation>
-                    <info key="LastModificationTime" type="java.lang.Long" value="1729682794624"/>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1729762739314"/>
                 </additionalInformation>
                 <redundancyData>
                     <redundancy transformationProviderName="legacy" type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy">
-                        <info type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy$E1Parameter" value="0.3" valueType="java.lang.Double"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy$E1Parameter" value="0.4" valueType="java.lang.Double"/>
                         <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$StatusParameter" value="6" valueType="java.lang.Integer"/>
                         <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$TurnParameter" value="104" valueType="java.lang.Integer"/>
                     </redundancy>
@@ -49,9 +49,13 @@
         </toolTemplate>
         <toolTemplate class="" name="pointer_w_marker">
             <frames>
-                <frame id="_074781f8-9c41-4245-a602-53f1eca6d773" name="TCP">
-                    <transformation a="0.0" b="0.0" c="0.0" x="-0.7276904179292761" y="0.31453305620462496" z="110.02661910276828"/>
+                <frame id="_074781f8-9c41-4245-a602-53f1eca6d773" name="TCP_measurement">
+                    <transformation a="-3.109162859486494" b="-1.1260554308500765" c="1.550478884515102" x="-0.7276904179292761" y="0.31453305620462496" z="110.02661910276828"/>
                     <measurementTranslation calculationError="2.2240018575254603" method="XYZ4Point" timestamp="1729700058982"/>
+                    <measurementRotation method="ABC2Point" timestamp="1729769235658"/>
+                </frame>
+                <frame id="_018d4b84-cf76-4dde-8559-7651ec541f52" name="TCP">
+                    <transformation a="0.0" b="0.0" c="0.0" x="-0.7" y="0.3" z="110.0"/>
                 </frame>
             </frames>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
