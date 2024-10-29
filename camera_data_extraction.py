@@ -1,13 +1,13 @@
 from sksurgerynditracker.nditracker import NDITracker
-import sksurgerycore.transforms.transform_manager as tm
+import ndicapy
 import socket
 import datetime
 import numpy as np
 import numpy.linalg as lin
 from scipy.spatial.transform import Rotation
+from scipy.signal import butter,sosfilt,sosfilt_zi
 import matplotlib.pyplot as plt
-from filterpy.kalman import KalmanFilter
-from filterpy.common import Q_discrete_white_noise
+
 
 def setup_TCP():
     '''
@@ -31,9 +31,13 @@ def camera_setup():
         "ip address": "169.254.121.249",
         "romfiles" : ["C:\\Files\\Polaris_integration\\markeri\\8700339.rom",
                       "C:\\Files\\Polaris_integration\\markeri\\FEM0001.rom",
-                      "C:\\Files\\Polaris_integration\\markeri\\8700338.rom"]
+                      "C:\\Files\\Polaris_integration\\markeri\\8700338.rom"],
+        
         }
     TRACKER = NDITracker(SETTINGS)
+    # TODO set right tracking frequency
+    ndicapy.ndiCommand(TRACKER._device,'SET Param.Tracking.Track Frequency=2')
+    
 
     TRACKER.start_tracking()
     return TRACKER
@@ -135,21 +139,20 @@ def main():
     tracker = camera_setup()
     a = input('Press to start...')
     client = setup_TCP()
-    
+
 
     prev_frame = 0
-    n = 5
+    n = 10
     k = 0
     data_buffer = np.zeros([n,6])
     position_marker = np.zeros([1,3])
     position_robot = np.zeros([1,3])
-    filter = KalmanFilter(dim_x=6,dim_z=6)
-    filter.x = np.array([100,100,100,0,0,0])
-    filter.F = np.eye(6)
-    filter.H = np.eye(6)
-    filter.R = np.eye(6)*0.12
-    filter.P *= 200
-    #filter.Q = np.eye(6)*0.12
+   
+    data_raw = np.zeros([1,6])
+    data_filt = np.zeros([1,6])
+
+    filter = butter(6,0.6,btype='lowpass',output='sos',fs=60)
+    zi = sosfilt_zi(filter)
 
 
     while 1:
@@ -158,6 +161,7 @@ def main():
 
             try:
                 trans,rot = calculate_transform(port_handles,tracking)
+                data_raw = np.vstack((data_raw,np.hstack((trans,rot))))
                 if np.isnan(trans).any() or np.isnan(rot).any():
                     continue
                 data_buffer = np.vstack((data_buffer,np.hstack((trans,rot))))
@@ -166,13 +170,13 @@ def main():
                     k += 1
                 else:
                     trans,rot = avg_filter(data_buffer)
-                    '''filter.predict()
-                    filter.update(np.hstack((trans,rot)))
-                    data = filter.x
-                    trans = data[:3]
-                    rot = data[3:]'''
+                    data_filt = np.vstack((data_filt,np.hstack((trans,rot))))
 
-
+                    '''data = sosfilt(filter,data_buffer,axis=0)
+                    trans = data[-1,:3]
+                    rot = data[-1,3:]
+                    data_filt = np.vstack((data_filt,data[-1,:]))'''
+                    
                     msg = create_msg(trans,rot)
 
                     client.send(bytes(msg,'UTF-8'))
@@ -183,7 +187,6 @@ def main():
                     position_marker = np.vstack((position_marker,target_pos))
                     position_robot = np.vstack((position_robot,tool_pos))
 
-                
                 prev_frame = framenumbers[0]
 
             except Exception as e:
@@ -192,9 +195,25 @@ def main():
                 client.close()
                 position_marker = np.delete(position_marker,0,0)
                 position_robot = np.delete(position_robot,0,0)
-                data = np.hstack((position_marker,position_robot))
-                now = datetime.datetime.now()
-                np.savetxt('saved_data\\data{}_{}.csv'.format(now.hour,now.minute),data,delimiter=',')
+                data_raw = np.delete(data_raw,[0,n+1],0)
+                data_filt = np.delete(data_filt,0,0)
+                #data = np.hstack((position_marker,position_robot))
+                #now = datetime.datetime.now()
+                #np.savetxt('saved_data\\data{}_{}.csv'.format(now.date(),now.hour,now.minute),data,delimiter=',')
+                plt.subplot(3,1,1)
+                plt.plot(np.arange(len(data_raw)),data_raw[:,0],label='raw')
+                plt.plot(np.arange(n,len(data_filt)+n),data_filt[:,0],label='filtered')
+                plt.legend()
+                plt.subplot(3,1,2)
+                plt.plot(np.arange(len(data_raw)),data_raw[:,1],label='raw')
+                plt.plot(np.arange(n,len(data_filt)+n),data_filt[:,1],label='filtered')
+                plt.legend()
+                plt.subplot(3,1,3)
+                plt.plot(np.arange(len(data_raw)),data_raw[:,2],label='raw')
+                plt.plot(np.arange(n,len(data_filt)+n),data_filt[:,2],label='filtered')
+                plt.legend()
+                plt.show()
+                
                 plt.subplot(3,1,1)
                 plt.plot(np.arange(len(position_marker)),position_marker[:,0],label='marker')
                 plt.plot(np.arange(len(position_robot)),position_robot[:,0],label='tool')

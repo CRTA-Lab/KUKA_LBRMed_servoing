@@ -21,6 +21,7 @@ import com.kuka.roboticsAPI.motionModel.IMotionContainer;
 import com.kuka.roboticsAPI.motionModel.RedundancyParam;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
+import com.kuka.roboticsAPI.uiModel.ApplicationDialogType;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -85,6 +86,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 
 	public void run() {
 		
+		
 		getApplicationControl().setApplicationOverride(0.7); // postavljanje brzine kretanja robota u programu
 		
 		SmartServo motion = new SmartServo(robot.getCurrentJointPosition()); // objekt za kontrolu servo kretanja
@@ -128,7 +130,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		    //kopiranje koordinatnog sustava pomicnog markera i tocke unutar tog markera
 		    Frame mobile_frame = marker.getChild("mobile_frame").copy();
 		    Frame target = marker.getChild("target").copyWithRedundancy();
-		    
+		    //getLogger().info(msg);
 		    Vector trans = Vector.of(data[0], data[1], data[2]);
 		    Rotation rot = Rotation.ofRad(data[3], data[4], data[5]);
 		    Transformation fwdTransform = Transformation.of(trans, rot);
