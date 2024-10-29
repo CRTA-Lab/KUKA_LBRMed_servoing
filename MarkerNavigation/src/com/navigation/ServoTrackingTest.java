@@ -7,8 +7,8 @@ import com.kuka.roboticsAPI.applicationModel.IApplicationOverrideControl;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
 import static com.kuka.roboticsAPI.motionModel.BasicMotions.*;
 
-import com.kuka.connectivity.motionModel.smartServo.ISmartServoRuntime;
-import com.kuka.connectivity.motionModel.smartServo.SmartServo;
+import com.kuka.connectivity.motionModel.smartServoLIN.ISmartServoLINRuntime;
+import com.kuka.connectivity.motionModel.smartServoLIN.SmartServoLIN;
 import com.kuka.med.deviceModel.LBRMed;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.ObjectFrame;
@@ -89,7 +89,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		
 		getApplicationControl().setApplicationOverride(0.7); // postavljanje brzine kretanja robota u programu
 		
-		SmartServo motion = new SmartServo(robot.getCurrentJointPosition()); // objekt za kontrolu servo kretanja
+		SmartServoLIN motion = new SmartServoLIN(robot.getCurrentCartesianPosition(pointer.getFrame("TCP"))); // objekt za kontrolu servo kretanja
 		motion.setMinimumTrajectoryExecutionTime(20e-3);
 		
 		CartesianImpedanceControlMode impedanceControlMode = new CartesianImpedanceControlMode(); // objekt za kontrolu Impedance moda
@@ -101,7 +101,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		
 		
 		IMotionContainer container = pointer.getFrame("TCP").moveAsync(motion);	// motion container za upravljanje kretanjama	
-		ISmartServoRuntime runtime = motion.getRuntime(); // servo runtime objekt za opravljanje parametricma servo kretanja
+		ISmartServoLINRuntime runtime = motion.getRuntime(); // servo runtime objekt za opravljanje parametricma servo kretanja
 		
 		while (true){
 			try {
