@@ -35,7 +35,7 @@ def camera_setup():
         
         }
     TRACKER = NDITracker(SETTINGS)
-    # TODO set right tracking frequency
+
     ndicapy.ndiCommand(TRACKER._device,'SET Param.Tracking.Track Frequency=2')
     
 
@@ -142,7 +142,7 @@ def main():
 
 
     prev_frame = 0
-    n = 10
+    n = 3*60
     k = 0
     data_buffer = np.zeros([n,6])
     position_marker = np.zeros([1,3])
@@ -151,8 +151,10 @@ def main():
     data_raw = np.zeros([1,6])
     data_filt = np.zeros([1,6])
 
-    filter = butter(6,0.6,btype='lowpass',output='sos',fs=60)
+    filter = butter(1,3,btype='lowpass',output='sos',fs=60)
     zi = sosfilt_zi(filter)
+    zi = np.dstack((zi,zi,zi,zi,zi,zi))
+
 
 
     while 1:
@@ -169,13 +171,13 @@ def main():
                 if k < n:
                     k += 1
                 else:
-                    trans,rot = avg_filter(data_buffer)
-                    data_filt = np.vstack((data_filt,np.hstack((trans,rot))))
+                    #trans,rot = avg_filter(data_buffer)
+                    #data_filt = np.vstack((data_filt,np.hstack((trans,rot))))
 
-                    '''data = sosfilt(filter,data_buffer,axis=0)
+                    data = sosfilt(filter,data_buffer,axis=0)
                     trans = data[-1,:3]
                     rot = data[-1,3:]
-                    data_filt = np.vstack((data_filt,data[-1,:]))'''
+                    data_filt = np.vstack((data_filt,data[-1,:]))
                     
                     msg = create_msg(trans,rot)
 

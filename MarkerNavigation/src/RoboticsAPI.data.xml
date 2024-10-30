@@ -35,6 +35,70 @@
                     </redundancy>
                 </redundancyData>
             </frame>
+            <frame id="_fafa8401-6202-4527-a5ea-29d248c944fa" name="P1">
+                <transformation a="1.1144148204467275" b="-0.13931215471242517" c="2.4415999376393693" x="-218.58408736679658" y="-110.22943637751445" z="24.808232281928383"/>
+                <additionalInformation>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1730223475524"/>
+                    <info base="LBR_Med_7_R800_1" controller="KUKA_Sunrise_Cabinet_1" device="LBR_Med_7_R800_1" tcpName="pointer_w_marker/TCP" tool="pointer_w_marker" type="com.kuka.roboticsAPI.deviceModel.TeachInformation">
+                        <tcpTransformation a="0.0" b="0.0" c="0.0" x="-0.7" y="0.3" z="110.0"/>
+                    </info>
+                </additionalInformation>
+                <redundancyData>
+                    <redundancy transformationProviderName="KUKA_Sunrise_Cabinet_1/LBR_Med_7_R800_1" type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy">
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$StatusParameter" value="2" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$TurnParameter" value="13" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy$E1Parameter" value="-4.601942363656924E-5" valueType="java.lang.Double"/>
+                    </redundancy>
+                </redundancyData>
+            </frame>
+            <frame id="_8248c33e-c77b-4d63-9ba4-e5996b0fc59b" name="P2">
+                <transformation a="1.193188663052378" b="-0.08247791857580093" c="2.434150021471728" x="-405.85876085066207" y="-67.3597430864726" z="102.51361000062809"/>
+                <additionalInformation>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1730223528893"/>
+                    <info base="LBR_Med_7_R800_1" controller="KUKA_Sunrise_Cabinet_1" device="LBR_Med_7_R800_1" tcpName="pointer_w_marker/TCP" tool="pointer_w_marker" type="com.kuka.roboticsAPI.deviceModel.TeachInformation">
+                        <tcpTransformation a="0.0" b="0.0" c="0.0" x="-0.7" y="0.3" z="110.0"/>
+                    </info>
+                </additionalInformation>
+                <redundancyData>
+                    <redundancy transformationProviderName="KUKA_Sunrise_Cabinet_1/LBR_Med_7_R800_1" type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy">
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$StatusParameter" value="2" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$TurnParameter" value="13" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy$E1Parameter" value="-4.7996772596000575E-5" valueType="java.lang.Double"/>
+                    </redundancy>
+                </redundancyData>
+            </frame>
+            <frame id="_7f43d80e-908d-47f2-8976-14c90ece210c" name="P3">
+                <transformation a="1.1144740420877393" b="-0.13942789224191923" c="2.4414527341155834" x="-437.6505445554181" y="467.35088343298054" z="161.823835499015"/>
+                <additionalInformation>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1730290169781"/>
+                    <info base="LBR_Med_7_R800_1" controller="KUKA_Sunrise_Cabinet_1" device="LBR_Med_7_R800_1" tcpName="pointer_w_marker/TCP" tool="pointer_w_marker" type="com.kuka.roboticsAPI.deviceModel.TeachInformation">
+                        <tcpTransformation a="0.0" b="0.0" c="0.0" x="-0.7" y="0.3" z="110.0"/>
+                    </info>
+                </additionalInformation>
+                <redundancyData>
+                    <redundancy transformationProviderName="KUKA_Sunrise_Cabinet_1/LBR_Med_7_R800_1" type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy">
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$StatusParameter" value="2" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$TurnParameter" value="30" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy$E1Parameter" value="-6.273738712603168E-5" valueType="java.lang.Double"/>
+                    </redundancy>
+                </redundancyData>
+            </frame>
+            <frame id="_88611673-0368-4ad5-9e94-4bcc2de3c48d" name="P4">
+                <transformation a="1.1931836334214532" b="-0.0823719303083463" c="2.4337256755861034" x="-19.61382208046723" y="298.44914378027704" z="121.69556473940281"/>
+                <additionalInformation>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1730223608136"/>
+                    <info base="LBR_Med_7_R800_1" controller="KUKA_Sunrise_Cabinet_1" device="LBR_Med_7_R800_1" tcpName="pointer_w_marker/TCP" tool="pointer_w_marker" type="com.kuka.roboticsAPI.deviceModel.TeachInformation">
+                        <tcpTransformation a="0.0" b="0.0" c="0.0" x="-0.7" y="0.3" z="110.0"/>
+                    </info>
+                </additionalInformation>
+                <redundancyData>
+                    <redundancy transformationProviderName="KUKA_Sunrise_Cabinet_1/LBR_Med_7_R800_1" type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy">
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$StatusParameter" value="2" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.StatusTurnRedundancy$TurnParameter" value="28" valueType="java.lang.Integer"/>
+                        <info type="com.kuka.roboticsAPI.deviceModel.LBRE1Redundancy$E1Parameter" value="-3.583280945730433E-5" valueType="java.lang.Double"/>
+                    </redundancy>
+                </redundancyData>
+            </frame>
         </frame>
     </world>
     <objectTemplates>
