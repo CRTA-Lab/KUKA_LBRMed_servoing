@@ -63,14 +63,21 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 	private ServerSocket server;
 	private Socket client;
 	private String msg;
+	
+	
 
 	@Override
 	public void initialize(){
-		pointer = getApplicationData().createFromTemplate("pointer_w_marker"); // stvaranje alata iz tool templatea
-		pointer.attachTo(robot.getFlange()); // spajanje alta na prihvatnicu robota
-		marker = getApplicationData().getFrame("/fixed_marker"); // ucitavanje fiksnog markera
+		pointer = getApplicationData().createFromTemplate("pointer"); // creation of the tool from the template
+		pointer.attachTo(robot.getFlange()); // attaching the tool to the robot flange
+		marker = getApplicationData().getFrame("/fixed_marker"); // loading the fixed marker frame
+		
+
+		
+		
+		
 		try {
-			// stvaranje TCP/IP sserver socketa i stvaranje ulaznog i izlaznog streama podataka
+			// Setup of the server socket for the communication with the camera program
 			
 			server = new ServerSocket(30000);
 			client = server.accept();
@@ -86,48 +93,54 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 
 	public void run() {
 		
+		// Moving the robot to the initial position
+		pointer.getFrame("TCP").move(ptp(marker.getChild("P3")).setJointVelocityRel(0.2));
 		
-		getApplicationControl().setApplicationOverride(0.7); // postavljanje brzine kretanja robota u programu
+		getApplicationControl().setApplicationOverride(0.5); // setting the speed override for the movement
 		
-		SmartServo motion = new SmartServo(robot.getCurrentJointPosition()); // objekt za kontrolu servo kretanja
+		SmartServo motion = new SmartServo(robot.getCurrentJointPosition()); // creating the servo motion object
 		motion.setMinimumTrajectoryExecutionTime(20e-3);
-		
-		CartesianImpedanceControlMode impedanceControlMode = new CartesianImpedanceControlMode(); // objekt za kontrolu Impedance moda
+
+		// Creating impedance control mode and applying it to the motion
+		/*CartesianImpedanceControlMode impedanceControlMode = new CartesianImpedanceControlMode(); 
 		impedanceControlMode.parametrize(CartDOF.TRANSL).setStiffness(800);
 		impedanceControlMode.parametrize(CartDOF.TRANSL).setDamping(0.5);
-		/*if (motion.validateForImpedanceMode(robot)){
-			motion.setMode(impedanceControlMode); // postavljanje robota u impedance mode
+		if (motion.validateForImpedanceMode(robot)){
+			motion.setMode(impedanceControlMode);
 		}*/
 		
 		
-		IMotionContainer container = pointer.getFrame("TCP").moveAsync(motion);	// motion container za upravljanje kretanjama	
-		ISmartServoRuntime runtime = motion.getRuntime(); // servo runtime objekt za opravljanje parametricma servo kretanja
+		IMotionContainer container = pointer.getFrame("TCP").moveAsync(motion);	// motion container for tuning the asincronous motion	
+		ISmartServoRuntime runtime = motion.getRuntime(); // servo runtime object for changing motion parameters
 		
+		// Motion is run in a loop until it is stopped from the teach pendant
 		while (true){
 			try {
-				msg = in.readLine(); // citanje poruke sa mreže
+				msg = in.readLine(); // reading the message from the network
 			} catch (IOException e) {
 				e.printStackTrace();
 				break;
 			}
 
-		    if (msg == null || msg == "0") { // ako nema poruke preskace se trenutni loop
+		    if (msg == null || msg == "0") { // skip current loop if message is empty 
 			      //getLogger().info("No tracking data");
 			      //out.println("No data recived!");
 			      continue;
 			    }
+		    
+		    // Checking and parsing the message with shape: flag,x,y,z,A,B,C
 		    String[] msgSplit = msg.split(",");
 		    double[] data = new double[msgSplit.length-1];
-		    if (msgSplit.length == 1) {// ako poruka nije vazeca preskace se trenutni loop
+		    if (msgSplit.length == 1) {
 		    	//getLogger().info("No tracking data");
 		    	//out.println("No data recived!");
 		    	continue;
 		    }
 		      
-		    for (int i = 1; i < msgSplit.length;i++) { // parsanje poruke, podatci su odvojeni zarezom: flag,x,y,z,A,B,C
+		    for (int i = 1; i < msgSplit.length;i++) {
 		      data[i-1] = Double.parseDouble(msgSplit[i]);
 		    }
-		    //kopiranje koordinatnog sustava pomicnog markera i tocke unutar tog markera
+		    // Copying the frames from the App data and transforming them with the data received from the camera.
 		    Frame mobile_frame = marker.getChild("mobile_frame").copy();
 		    Frame target = marker.getChild("target").copyWithRedundancy();
 		    //getLogger().info(msg);
@@ -135,13 +148,16 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		    Rotation rot = Rotation.ofRad(data[3], data[4], data[5]);
 		    Transformation fwdTransform = Transformation.of(trans, rot);
 		    
-		    mobile_frame.transform(fwdTransform); // transformacija koordinatnog sustava pomicnog markera  prema podatcima s kamere
+		    mobile_frame.transform(fwdTransform); 
 		    
+		    // Defining the target within the mobile frame with the offset to be behind the marker and an angle so that tool marker is also visible
 		    target.setParent(mobile_frame);
-		    target.transform(Transformation.ofTranslation(0, 0, -40)); // definiranje tocke 30mm "iza" pomicnog markera
+		    target.transform(Transformation.ofTranslation(0, 0, -40));
 		    target.transform(Transformation.ofDeg(0, 0, 0, 0, 0, 45));
 		    
-		    runtime.setDestination(target); // zadavanje odredista servo controli
+		    runtime.setDestination(target); // Sending new destination to the servo control
+		    
+		    // Sending robots current position to the paython script over the network
 		    curr_pos = runtime.getCurrentCartesianPosition(pointer.getFrame("TCP"), mobile_frame);
 		    out.println(curr_pos.toString());
 			}   

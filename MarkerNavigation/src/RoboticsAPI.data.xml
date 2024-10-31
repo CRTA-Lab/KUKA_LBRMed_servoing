@@ -111,7 +111,7 @@
             </frames>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
         </toolTemplate>
-        <toolTemplate class="" name="pointer_w_marker">
+        <toolTemplate class="" defaultMotionFrameRef="/TCP" name="pointer_w_marker">
             <frames>
                 <frame id="_074781f8-9c41-4245-a602-53f1eca6d773" name="TCP_measurement">
                     <transformation a="-3.109162859486494" b="-1.1260554308500765" c="1.550478884515102" x="-0.7276904179292761" y="0.31453305620462496" z="110.02661910276828"/>

@@ -11,9 +11,11 @@ import matplotlib.pyplot as plt
 
 def setup_TCP():
     '''
-    Function for configuration of TCP/IP connection with the robot
-    in : none
-    out : socket
+    Configurates the TCP/IP connection with the robot
+
+    Args : none
+
+    Output : socket
     '''
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(('192.168.40.200',30000))
@@ -22,9 +24,11 @@ def setup_TCP():
 
 def camera_setup():
     '''
-    Fonction fo confiugration of the connection to the camera and initiation of the tracking
-    in : none
-    out : NDITracker - camera comunication object
+    Configures the connection to the camera and initiation of the tracking
+
+    Args : none
+
+    Output : NDITracker - camera comunication object
     '''
     SETTINGS = {
         "tracker type": "vega",
@@ -43,6 +47,16 @@ def camera_setup():
     return TRACKER
 
 def avg_filter(data):
+    '''
+    Applies avarageing filter on the data window
+
+    Args :
+        data - data window to be avaraged (ndarray[n,6])
+
+    Output :
+        trans - avaraged translation data (ndarray[1,3])
+        rot - avaraged rotation data (ndarray[1,3])
+    '''
     trans = data[0,:3]
     rot = data[0,3:]
     order = data.shape[0]
@@ -56,18 +70,20 @@ def avg_filter(data):
 
 
 def calculate_transform(handles,transforms):
-    '''
-    Function for calculation of transformation between fixed and mobile marker from their transforms in coordinate frame of the camera
-    in :    handles - lista prepoznatih markera
-            transforms - lista matrica transformcija pojedinih markera u odnosu na koordinatni sustav kamere
-    out:    trans - translacijski vektor pomičnog markera u koordinatnom sustavu fiksnog markera
-            rot_angles - vektor eulerovih kutova zakreta pomičnog markera u koordinatnom sustavu fiksnog markera, eulerovi kutovi su u redosljedu Z,Y,X kompatibilnim sa KUKA kontrolerom
-    '''
+    """
+    Calculates the transformation between fixed and mobile marker from their transforms in coordinate frame of the camera
+
+    Args :
+        handles - list of the marker labels
+        transforms - list of transformation matrices of each marker
+    Output:
+        trans - translation vector of the mobile marker w/respect to fixed marker (ndarray[1,3])
+        rot_angles - euler angle vector of the mobile marker w/respect to the fixed marker (ndarray[1,3]), angles are in Z,Y',X'' order compatible wiht KUKA controler
+    """
     if handles[0] == 1:
         T_st = np.array(transforms[0])
         T_din = np.array(transforms[1])
     else:
-        print('a jebiga')
         T_st = np.array(transforms[1])
         T_din = np.array(transforms[0])
 
@@ -87,12 +103,14 @@ def calculate_transform(handles,transforms):
 
 def create_msg(trans,rot):
     '''
-    Funkcija za stvaranje poruke za prijenos preko TCP/IP veze
+    Creating the message to be sent ovet TCP/IP
 
-    in :    trans - vektor translacije pomičnog markera
-            rot - vektor eulerovih kutova pomičnog markera u Z,Y,X redosljedu
+    Args :
+        trans - translation vector (ndarray[1,3])
+        rot - euler angle vector (ndarray[1,3])
     
-    out :  msg - string poruka za prijenos preko mreže ili "0\\n" ako nema podataka sa kamere  
+    Output :
+        msg - message assamble from the data, or 0\\n if data is unavailible (String)  
     '''
     if np.isnan(trans).any() or np.isnan(rot).any():
         return '0\n'
@@ -105,6 +123,16 @@ def create_msg(trans,rot):
     return msg
 
 def calculate_distance(tramsforms):
+    '''
+    Calculation of the tool and target position in the coordinate frame of the fixed marker
+
+    Args:
+        transforms - list of the transformation matrices od the markers
+    
+    Output:
+        tool_pos - position of the tool in coordinate frame of the fixed marker
+        target_pos - position of the target in coordinate frame of the fixed marker
+    '''
     frame = tramsforms[0]
     target = tramsforms[1]
     tool = tramsforms[2]
@@ -123,6 +151,15 @@ def calculate_distance(tramsforms):
 
 
 def parse_msg(msg):
+    '''
+    Parsing the robots coordinates from the message
+
+    Args:
+        msg - message receved from robot
+    
+    Output:
+        pos - position of robots TCP
+    '''
     msg_list = msg.split(' ')
     pos = []
     for i in msg_list[1:4]:
@@ -135,12 +172,12 @@ def parse_msg(msg):
 
 def main():
 
-
     tracker = camera_setup()
-    a = input('Press to start...')
+    #a = input('Press to start...')
     client = setup_TCP()
 
 
+    #initialization of the variables
     prev_frame = 0
     n = 3*60
     k = 0
@@ -151,6 +188,7 @@ def main():
     data_raw = np.zeros([1,6])
     data_filt = np.zeros([1,6])
 
+    #design of the Butterworth filter
     filter = butter(1,3,btype='lowpass',output='sos',fs=60)
     zi = sosfilt_zi(filter)
     zi = np.dstack((zi,zi,zi,zi,zi,zi))
@@ -159,21 +197,25 @@ def main():
 
     while 1:
         port_handles, timestamps, framenumbers, tracking, quality = tracker.get_frame()
+        
         if framenumbers[0] != prev_frame:
-
+            # try-catch loop that will end the program when server (robot app) breaks the connection
+            prev_frame = framenumbers[0]
             try:
                 trans,rot = calculate_transform(port_handles,tracking)
-                data_raw = np.vstack((data_raw,np.hstack((trans,rot))))
                 if np.isnan(trans).any() or np.isnan(rot).any():
                     continue
+                data_raw = np.vstack((data_raw,np.hstack((trans,rot))))
                 data_buffer = np.vstack((data_buffer,np.hstack((trans,rot))))
                 data_buffer = np.delete(data_buffer,0,0)
                 if k < n:
                     k += 1
                 else:
+                    #avarageing filter
                     #trans,rot = avg_filter(data_buffer)
                     #data_filt = np.vstack((data_filt,np.hstack((trans,rot))))
 
+                    #Butterworkth filter
                     data = sosfilt(filter,data_buffer,axis=0)
                     trans = data[-1,:3]
                     rot = data[-1,3:]
@@ -182,16 +224,15 @@ def main():
                     msg = create_msg(trans,rot)
 
                     client.send(bytes(msg,'UTF-8'))
-                    incoming_msg = client.recv(1024)
+                    #incoming_msg = client.recv(1024)
 
                     tool_pos,target_pos = calculate_distance(tracking)
 
                     position_marker = np.vstack((position_marker,target_pos))
                     position_robot = np.vstack((position_robot,tool_pos))
 
-                prev_frame = framenumbers[0]
 
-            except Exception as e:
+            except OSError as e:
                 print('Dogodila se greška:\n{}'.format(e))
                 tracker.stop_tracking()
                 client.close()
@@ -199,6 +240,7 @@ def main():
                 position_robot = np.delete(position_robot,0,0)
                 data_raw = np.delete(data_raw,[0,n+1],0)
                 data_filt = np.delete(data_filt,0,0)
+                #saving recorded data to file
                 #data = np.hstack((position_marker,position_robot))
                 #now = datetime.datetime.now()
                 #np.savetxt('saved_data\\data{}_{}.csv'.format(now.date(),now.hour,now.minute),data,delimiter=',')
