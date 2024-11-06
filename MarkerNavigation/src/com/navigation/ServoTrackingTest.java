@@ -3,6 +3,7 @@ package com.navigation;
 
 import javax.inject.Inject;
 
+import com.kuka.roboticsAPI.applicationModel.IApplicationControl;
 import com.kuka.roboticsAPI.applicationModel.IApplicationOverrideControl;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
 import static com.kuka.roboticsAPI.motionModel.BasicMotions.*;
@@ -57,6 +58,7 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 	private Tool pointer;
 	private ObjectFrame marker;
 	private Frame curr_pos;
+	private Frame calib_frame;
 	
 	private BufferedReader in;
 	private PrintWriter out;
@@ -64,15 +66,26 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 	private Socket client;
 	private String msg;
 	
-	
+	private ObjectFrame P1;
+	private ObjectFrame P2;
+	private ObjectFrame P3;
+	private ObjectFrame P4;
+	private ObjectFrame P5;
 
 	@Override
 	public void initialize(){
-		pointer = getApplicationData().createFromTemplate("pointer"); // creation of the tool from the template
+		pointer = getApplicationData().createFromTemplate("pointer_w_marker"); // creation of the tool from the template
 		pointer.attachTo(robot.getFlange()); // attaching the tool to the robot flange
 		marker = getApplicationData().getFrame("/fixed_marker"); // loading the fixed marker frame
+		calib_frame = marker.getChild("fixed_marker_camera").copy();
 		
-
+		
+		P1 = getApplicationData().getFrame("/P1");
+		P2 = getApplicationData().getFrame("/P2");
+		P3 = getApplicationData().getFrame("/P3");
+		P4 = getApplicationData().getFrame("/P4");
+		P5 = marker.getChild("P5");
+		
 		
 		
 		
@@ -90,11 +103,68 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 		}
 	}
 		
-
+	public void Calibration(ObjectFrame[] points) throws IOException{
+		msg = in.readLine();
+		getLogger().info(msg);
+		pointer.getFrame("TCP").move(ptp(P5).setJointVelocityRel(0.2));
+		for (ObjectFrame i : points){
+			pointer.getFrame("TCP").move(ptp(i).setJointVelocityRel(0.2));
+			while (! msg.contains("Done")){
+				//getLogger().info("Ok");
+				out.println(pointer.getFrame("TCP_measurement").toStringInWorld());
+				msg = in.readLine();
+				//getLogger().info(msg);
+			}
+			msg = "OK";
+		}
+		out.println("Send data");
+		msg = in.readLine();
+		Transformation transform = parseMsg(msg);
+		calib_frame.setParent(getApplicationData().getFrame("/zero_frame"));
+		calib_frame.transform(transform);
+		getLogger().info(calib_frame.transformationFromWorld().toString());
+		return;
+	}
+		
+	public Transformation parseMsg(String msg){
+		String[] msgSplit = msg.split(",");
+	    double[] data = new double[msgSplit.length-1];
+	    if (msgSplit.length == 1) {
+	    	//getLogger().info("No tracking data");
+	    	//out.println("No data recived!");
+	    	return null;
+	    }
+	      
+	    for (int i = 1; i < msgSplit.length;i++) {
+	      data[i-1] = Double.parseDouble(msgSplit[i]);
+	    }
+	    Vector trans = Vector.of(data[0], data[1], data[2]);
+	    Rotation rot = Rotation.ofRad(data[3], data[4], data[5]);
+	    Transformation fwdTransform = Transformation.of(trans, rot);
+	    return fwdTransform;
+	}
+		
+	
 	public void run() {
 		
+		
+		int calib = getApplicationUI().displayModalDialog(ApplicationDialogType.QUESTION, "Calibrate fixed frame?", "Yes", "No");
+		if (calib == 0){
+			try {
+				out.println("Calibrate");
+				
+				Calibration(new ObjectFrame[]{P1,P2,P3,P4});
+			} catch (IOException e) {
+				e.printStackTrace();
+				return;
+			}
+		}else{
+			out.println("Navigate");
+		}
+		
 		// Moving the robot to the initial position
-		pointer.getFrame("TCP").move(ptp(marker.getChild("P3")).setJointVelocityRel(0.2));
+		pointer.getFrame("TCP").moveAsync(ptp(P3).setJointVelocityRel(0.2).setBlendingCart(100));
+		pointer.getFrame("TCP").move(ptp(P5).setJointVelocityRel(0.2));
 		
 		getApplicationControl().setApplicationOverride(0.5); // setting the speed override for the movement
 		
@@ -129,30 +199,19 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 			    }
 		    
 		    // Checking and parsing the message with shape: flag,x,y,z,A,B,C
-		    String[] msgSplit = msg.split(",");
-		    double[] data = new double[msgSplit.length-1];
-		    if (msgSplit.length == 1) {
-		    	//getLogger().info("No tracking data");
-		    	//out.println("No data recived!");
-		    	continue;
-		    }
-		      
-		    for (int i = 1; i < msgSplit.length;i++) {
-		      data[i-1] = Double.parseDouble(msgSplit[i]);
-		    }
+		    Transformation fwdTransform = parseMsg(msg);
+		    if (fwdTransform == null){continue;}
 		    // Copying the frames from the App data and transforming them with the data received from the camera.
 		    Frame mobile_frame = marker.getChild("mobile_frame").copy();
 		    Frame target = marker.getChild("target").copyWithRedundancy();
 		    //getLogger().info(msg);
-		    Vector trans = Vector.of(data[0], data[1], data[2]);
-		    Rotation rot = Rotation.ofRad(data[3], data[4], data[5]);
-		    Transformation fwdTransform = Transformation.of(trans, rot);
 		    
+		    mobile_frame.setParent(calib_frame);
 		    mobile_frame.transform(fwdTransform); 
 		    
 		    // Defining the target within the mobile frame with the offset to be behind the marker and an angle so that tool marker is also visible
 		    target.setParent(mobile_frame);
-		    target.transform(Transformation.ofTranslation(0, 0, -40));
+		    target.transform(Transformation.ofTranslation(0, 0, -50));
 		    target.transform(Transformation.ofDeg(0, 0, 0, 0, 0, 45));
 		    
 		    runtime.setDestination(target); // Sending new destination to the servo control

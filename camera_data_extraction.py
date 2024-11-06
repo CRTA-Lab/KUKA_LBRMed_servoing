@@ -4,6 +4,7 @@ import socket
 import datetime
 import numpy as np
 import numpy.linalg as lin
+from scipy import optimize
 from scipy.spatial.transform import Rotation
 from scipy.signal import butter,sosfilt,sosfilt_zi
 import matplotlib.pyplot as plt
@@ -46,7 +47,7 @@ def camera_setup():
     TRACKER.start_tracking()
     return TRACKER
 
-def avg_filter(data):
+def avg_filter(data:np.ndarray):
     '''
     Applies avarageing filter on the data window
 
@@ -69,7 +70,7 @@ def avg_filter(data):
     return trans/order,rot/order
 
 
-def calculate_transform(handles,transforms):
+def calculate_transform(transforms:list,tool = False):
     """
     Calculates the transformation between fixed and mobile marker from their transforms in coordinate frame of the camera
 
@@ -80,12 +81,8 @@ def calculate_transform(handles,transforms):
         trans - translation vector of the mobile marker w/respect to fixed marker (ndarray[1,3])
         rot_angles - euler angle vector of the mobile marker w/respect to the fixed marker (ndarray[1,3]), angles are in Z,Y',X'' order compatible wiht KUKA controler
     """
-    if handles[0] == 1:
-        T_st = np.array(transforms[0])
-        T_din = np.array(transforms[1])
-    else:
-        T_st = np.array(transforms[1])
-        T_din = np.array(transforms[0])
+    T_st = np.array(transforms[0])
+    T_din = np.array(transforms[1+tool])
 
     if np.isnan(T_st).any() or np.isnan(T_din).any():
         return np.nan, np.nan
@@ -97,11 +94,10 @@ def calculate_transform(handles,transforms):
 
     trans = T_robot[:3,-1]
     
-
     return trans,rot_angles
 
 
-def create_msg(trans,rot):
+def create_msg(trans:np.ndarray,rot:np.ndarray):
     '''
     Creating the message to be sent ovet TCP/IP
 
@@ -110,7 +106,7 @@ def create_msg(trans,rot):
         rot - euler angle vector (ndarray[1,3])
     
     Output :
-        msg - message assamble from the data, or 0\\n if data is unavailible (String)  
+        msg - message assambled from the data, or 0\\n if data is unavailible (String)  
     '''
     if np.isnan(trans).any() or np.isnan(rot).any():
         return '0\n'
@@ -122,7 +118,7 @@ def create_msg(trans,rot):
     msg += '\n'
     return msg
 
-def calculate_distance(tramsforms):
+def calculate_distance(tramsforms:list):
     '''
     Calculation of the tool and target position in the coordinate frame of the fixed marker
 
@@ -138,7 +134,7 @@ def calculate_distance(tramsforms):
     tool = tramsforms[2]
 
 
-    trans_z = np.array([1,0,0,0,0,1,0,0,0,0,1,-40,0,0,0,1])
+    trans_z = np.array([1,0,0,0,0,1,0,0,0,0,1,-50,0,0,0,1])
     trans_z.shape = [4,4]
     target = np.matmul(target,trans_z)
 
@@ -150,7 +146,7 @@ def calculate_distance(tramsforms):
     return tool_pos,target_pos
 
 
-def parse_msg(msg):
+def parse_msg(msg:str):
     '''
     Parsing the robots coordinates from the message
 
@@ -158,14 +154,91 @@ def parse_msg(msg):
         msg - message receved from robot
     
     Output:
-        pos - position of robots TCP
+        T - transformation matrix from robot base to the TCP
     '''
+    msg = msg.split(']')[0]
     msg_list = msg.split(' ')
     pos = []
-    for i in msg_list[1:4]:
+    for i in msg_list:
         temp = i.split('=')
         pos.append(float(temp[1]))
-    return np.array(pos)
+    #print(pos)
+    r = Rotation.from_euler('ZYX',pos[3:],degrees=False)
+    rot = r.as_matrix()
+    T = np.eye(4)
+    T[:3,:3] = rot
+    T[:3,-1] = pos[:3]
+    return T
+
+def frame_calibration(client:socket.socket,tracker:NDITracker):
+    '''
+    Calibrating the fixed frame on the robot using camera and robot data and sending the frame data to the robot
+
+    Args:
+        client - TCP client for comunication with the robot
+        tracker - camera comunication object
+
+    Output: None
+    '''
+    client.send(bytes('Ready\n','UTF-8'))
+    prev_frame=0
+
+    data = []
+
+    for i in range(4):
+        j = 0
+        msg = client.recv(1024)
+        while j < 60:
+            port_handles, timestamps, framenumbers, tracking, quality = tracker.get_frame()
+            if framenumbers[0] != prev_frame:
+                
+                T_T = tracking[2] # transform from camera to tool
+                T_F = tracking[0] # transform from camera to fixed frame
+
+                T_R = parse_msg(str(msg)) # transform from robots base to TCP
+
+                # transform from robot base to fixed frame: T_B = T_R*T_T^(-1)*T_F
+                T_B = np.matmul(T_R,lin.inv(T_T))
+                T_B = np.matmul(T_B,T_F)
+
+                data.append(T_B)
+                
+                client.send(bytes('Next\n','UTF-8'))
+
+                j += 1
+                #print('cekam poruku')
+                msg = client.recv(1024)
+                #print(msg)
+                prev_frame = framenumbers[0]
+                
+        print('Idući')        
+        client.send(bytes('Done\n','UTF-8'))
+        print(data[-1])
+
+    # avarageing the data of all the measurements   
+    T = np.zeros([4,4])
+    for i in data:
+        T += i
+    print(len(data))
+    T /= len(data)
+    print(T)
+    
+    # transforming the data into x,y,z,A,B,C format to send to the robot
+    rot = T[:3,:3]
+    r = Rotation.from_matrix(rot)
+    rot_angles = r.as_euler('ZYX',degrees=False)
+    trans = T[:3,-1]
+
+    # creating and sending the message to the robot
+    msg = create_msg(trans,rot_angles)
+    print(trans,rot_angles)
+    client.send(bytes(msg,'UTF-8'))
+    return
+
+
+                
+
+
     
 
 
@@ -176,7 +249,11 @@ def main():
     #a = input('Press to start...')
     client = setup_TCP()
 
-
+    msg = str(client.recv(1024))
+    if 'Calibrate' in msg:
+        print('Sve ok')
+        frame_calibration(client,tracker)
+        
     #initialization of the variables
     prev_frame = 0
     n = 3*60
@@ -186,7 +263,7 @@ def main():
     position_robot = np.zeros([1,3])
    
     data_raw = np.zeros([1,6])
-    data_filt = np.zeros([1,6])
+    data_filt = np.zeros([1,6])    
 
     #design of the Butterworth filter
     filter = butter(1,3,btype='lowpass',output='sos',fs=60)
@@ -202,7 +279,7 @@ def main():
             # try-catch loop that will end the program when server (robot app) breaks the connection
             prev_frame = framenumbers[0]
             try:
-                trans,rot = calculate_transform(port_handles,tracking)
+                trans,rot = calculate_transform(tracking)
                 if np.isnan(trans).any() or np.isnan(rot).any():
                     continue
                 data_raw = np.vstack((data_raw,np.hstack((trans,rot))))
