@@ -147,19 +147,32 @@ public class ServoTrackingTest extends RoboticsAPIApplication {
 	
 	public void run() {
 		
-		
-		int calib = getApplicationUI().displayModalDialog(ApplicationDialogType.QUESTION, "Calibrate fixed frame?", "Yes", "No");
-		if (calib == 0){
+		Boolean flag = true;
+		int calib = getApplicationUI().displayModalDialog(ApplicationDialogType.QUESTION, "Which frame do you want to use?", "Hand teached frame", "Read frame from file","Calibrate frame with camera");
+		if (calib == 2){
 			try {
 				out.println("Calibrate");
 				
-				Calibration(new ObjectFrame[]{P1,P2,P3,P4});
+				Calibration(new ObjectFrame[]{P2,P3,P4,P1});
 			} catch (IOException e) {
 				e.printStackTrace();
 				return;
 			}
 		}else{
-			out.println("Navigate");
+			if (calib == 1){
+				out.println("Load");
+				try {
+					msg = in.readLine();
+					Transformation transform = parseMsg(msg);
+					calib_frame.setParent(getApplicationData().getFrame("/zero_frame"));
+					calib_frame.transform(transform);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}else{
+				out.println("Navigate");
+				flag = false;
+				}
 		}
 		
 		// Moving the robot to the initial position

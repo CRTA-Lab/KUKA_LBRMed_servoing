@@ -233,6 +233,15 @@ def frame_calibration(client:socket.socket,tracker:NDITracker):
     msg = create_msg(trans,rot_angles)
     print(trans,rot_angles)
     client.send(bytes(msg,'UTF-8'))
+    f = open('frame.txt','w')
+    f.write(msg)
+    f.close()
+    return
+
+def load_frame(client:socket.socket):
+    f = open('frame.txt','r')
+    msg = f.readline()
+    client.send(bytes(msg,'UTF-8'))
     return
 
 
@@ -251,8 +260,9 @@ def main():
 
     msg = str(client.recv(1024))
     if 'Calibrate' in msg:
-        print('Sve ok')
         frame_calibration(client,tracker)
+    elif 'Load' in msg:
+        load_frame(client)
         
     #initialization of the variables
     prev_frame = 0
@@ -336,16 +346,16 @@ def main():
                 plt.show()
                 
                 plt.subplot(3,1,1)
-                plt.plot(np.arange(len(position_marker)),position_marker[:,0],label='marker')
-                plt.plot(np.arange(len(position_robot)),position_robot[:,0],label='tool')
+                plt.plot(np.arange(len(position_marker)-500),position_marker[500:,0],label='marker')
+                plt.plot(np.arange(len(position_robot)-500),position_robot[500:,0],label='tool')
                 plt.legend()
                 plt.subplot(3,1,2)
-                plt.plot(np.arange(len(position_marker)),position_marker[:,1],label='marker')
-                plt.plot(np.arange(len(position_robot)),position_robot[:,1],label='tool')
+                plt.plot(np.arange(len(position_marker)-500),position_marker[500:,1],label='marker')
+                plt.plot(np.arange(len(position_robot)-500),position_robot[500:,1],label='tool')
                 plt.legend()
                 plt.subplot(3,1,3)
-                plt.plot(np.arange(len(position_marker)),position_marker[:,2],label='marker')
-                plt.plot(np.arange(len(position_robot)),position_robot[:,2],label='tool')
+                plt.plot(np.arange(len(position_marker)-500),position_marker[500:,2],label='marker')
+                plt.plot(np.arange(len(position_robot)-500),position_robot[500:,2],label='tool')
                 plt.legend()
                 plt.show()
                 return

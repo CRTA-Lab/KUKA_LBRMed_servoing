@@ -27,7 +27,7 @@ public class MechanicalZeroPosition extends RoboticsAPIApplication {
 		pointer.attachTo(lbr.getFlange()); // attaching the tool to the robot flange
 		marker = getApplicationData().getFrame("/fixed_marker"); // loading the fixed marker frame
 		
-		P1 = getApplicationData().getFrame("/P3");
+		P1 = getApplicationData().getFrame("/P2");
 	}
 
 	public void run() {
