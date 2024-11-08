@@ -215,13 +215,28 @@ def frame_calibration(client:socket.socket,tracker:NDITracker):
         client.send(bytes('Done\n','UTF-8'))
         print(data[-1])
 
-    # avarageing the data of all the measurements   
-    T = np.zeros([4,4])
+    # avarageing the data of all the measurements
+    def min_func(x:np.ndarray):
+        sum = np.zeros([16,])
+        for i in data:
+            j = i.reshape((16,))
+            sum += abs(j-x)
+        #sum = sum.reshape((16,))
+        return sum
+    '''T = np.zeros([4,4])
     for i in data:
         T += i
     print(len(data))
     T /= len(data)
-    print(T)
+    print(T)'''
+
+    x0 = data[0]
+    x0 = x0.reshape((16,))
+    print(type(x0))
+    print(x0.shape)
+    result = optimize.least_squares(min_func,x0)
+    T = result.x
+    T.shape = [4,4]
     
     # transforming the data into x,y,z,A,B,C format to send to the robot
     rot = T[:3,:3]
@@ -231,7 +246,8 @@ def frame_calibration(client:socket.socket,tracker:NDITracker):
 
     # creating and sending the message to the robot
     msg = create_msg(trans,rot_angles)
-    print(trans,rot_angles)
+    print(msg)
+    #a = input('Waiting...')
     client.send(bytes(msg,'UTF-8'))
     f = open('frame.txt','w')
     f.write(msg)
