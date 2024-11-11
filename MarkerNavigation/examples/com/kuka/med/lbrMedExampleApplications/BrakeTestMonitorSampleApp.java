@@ -67,7 +67,7 @@ public class BrakeTestMonitorSampleApp extends RoboticsAPIApplication implements
     /** Additional thread to handle BrakeTestMonitorEvents with dialog boxes for user feedback. */
     private ExecutorService _workerToHandleEvent = Executors.newSingleThreadExecutor();
 
-    
+    @Override
     public void initialize()
     {
         _controller = (MedController) _lbr.getController();
@@ -87,7 +87,7 @@ public class BrakeTestMonitorSampleApp extends RoboticsAPIApplication implements
                 Math.toRadians(0));
     }
 
-    
+    @Override
     public void run()
     {
         // check the current status of the cyclic brake test because an event could have been missed due to
@@ -140,7 +140,7 @@ public class BrakeTestMonitorSampleApp extends RoboticsAPIApplication implements
      * Implementation of the callback method to listen for monitor state events. An additional single thread is required
      * to use dialog boxes for user feedback without blocking the listener callback.
      * */
-    
+    @Override
     public void onMonitoringStateChanged(BrakeTestMonitorEvent event)
     {
         if (!event.getCurrentCyclicMonitorState().equals(_currentStatus))
@@ -155,7 +155,7 @@ public class BrakeTestMonitorSampleApp extends RoboticsAPIApplication implements
             // Run the handling of the event with dialog boxes in an additional Thread
             _workerToHandleEvent.execute(new Runnable()
             {
-                
+                @Override
                 public void run()
                 {
                     handleCyclicMonitoring();

@@ -91,7 +91,7 @@ public class DirectServoSampleSimpleJointMotion extends RoboticsAPIApplication
         }
     }
 
-    
+    @Override
     public void run()
     {
         moveToInitialPosition();

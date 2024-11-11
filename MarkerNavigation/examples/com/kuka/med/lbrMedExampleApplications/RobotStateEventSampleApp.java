@@ -52,7 +52,7 @@ public class RobotStateEventSampleApp extends RoboticsAPIApplication implements 
         super.dispose();
     }
 
-    
+    @Override
     public void run()
     {
         while (_continueApplication)
@@ -123,7 +123,7 @@ public class RobotStateEventSampleApp extends RoboticsAPIApplication implements 
         _logger.info("************************************");
     }
 
-    
+    @Override
     public void onRobotStateChanged(RobotStateEvent event)
     {
         // update event history

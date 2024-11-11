@@ -90,7 +90,7 @@ public class SmartServoLINInteractionControl extends RoboticsAPIApplication
         }
     }
 
-    
+    @Override
     public void run()
     {
         getLogger().info("Move to start position.");

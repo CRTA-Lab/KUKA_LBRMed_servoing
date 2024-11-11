@@ -95,7 +95,7 @@ public class DirectServoSampleSimpleCartesian extends RoboticsAPIApplication
     /**
      * Main Application Routine
      */
-    
+    @Override
     public void run()
     {
         moveToInitialPosition();

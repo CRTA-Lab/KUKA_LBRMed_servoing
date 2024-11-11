@@ -89,7 +89,7 @@ public class SmartServoSampleSimpleCartesian extends RoboticsAPIApplication
     /**
      * Main Application Routine.
      */
-    
+    @Override
     public void run()
     {
         moveToInitialPosition();

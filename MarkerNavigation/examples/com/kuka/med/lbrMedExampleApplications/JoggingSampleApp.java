@@ -55,7 +55,7 @@ public class JoggingSampleApp extends RoboticsAPIApplication
         _logger = getLogger();
     }
 
-    
+    @Override
     public void run()
     {
         // Move to initial position to start jogging from the application

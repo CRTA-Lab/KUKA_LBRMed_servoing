@@ -26,7 +26,7 @@ public class UnmasteredSampleApp extends RoboticsAPIApplication
 
     private static final int MILLI_SLEEP_TO_PRODUCE_PAUSE = 2000;
 
-    
+    @Override
     public void run()
     {
         //Create a mastering object

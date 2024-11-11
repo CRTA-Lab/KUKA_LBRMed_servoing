@@ -40,10 +40,10 @@ public class MechanicalZeroPosition extends RoboticsAPIApplication {
         
     	
 		getLogger().info("Move to the mechanical zero position");
-		/*PTP ptpToMechanicalZeroPosition = ptp(0,0,0,0,0,0,0);
+		PTP ptpToMechanicalZeroPosition = ptp(0,0,0,0,0,0,0);
 		ptpToMechanicalZeroPosition.setJointVelocityRel(0.25);
-		lbr.move(ptpToMechanicalZeroPosition);*/
-		pointer.getFrame("TCP").move(ptp(P1).setJointVelocityRel(0.2));
+		lbr.move(ptpToMechanicalZeroPosition);
+		//pointer.getFrame("TCP").move(ptp(P1).setJointVelocityRel(0.2));
 	}
 
 

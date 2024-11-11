@@ -93,7 +93,7 @@ public class SmartServoSampleSimpleJointMotion extends RoboticsAPIApplication
         }
     }
 
-    
+    @Override
     public void run()
     {
 

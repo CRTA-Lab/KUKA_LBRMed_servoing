@@ -63,7 +63,7 @@ public class SmartServoLINSimpleMotion extends RoboticsAPIApplication
         _toolAttachedToLBR.attachTo(_lbr.getFlange());
     }
 
-    
+    @Override
     public void run()
     {
         getLogger().info("Move to start position.");
