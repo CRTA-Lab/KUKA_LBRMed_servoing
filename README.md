@@ -1,7 +1,8 @@
 # Tracking the marker with KUKA LBR Med using Polaris Vega ST camera
 
 Required software:
-- KUKA sunrise workbench - med 1.15
+- KUKA sunrise workbench - med 1.15 with FRI support
+- ROS2 Humble
 - Python 3.10
 - numpy 1.26.4
 - scipy
@@ -12,14 +13,49 @@ Required software:
 
 Install KUKA Sunrise using it's installation wizard, and install all of the availible additional software.
 
+**ROS**
+
+Install ROS2 Humble using [official guide](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
+
 **Camera support**
 
-To use the camera installation of Python 3.10 is needed because the library used for the communication with the camera requires numpy version not newer than 1.26.4 which in turn is not supported by Python versions newer than 3.10. You can download it from https://www.python.org/downloads/release/python-31011/
+Your Ubuntu instalation most likely comes with appropriate version of Python already installed. You can check that by running
+```bash
+apt policy python3
+```
+You should ge output something like:
+```
+python3:
+  Installed: 3.10.6-1~22.04.1
+  Candidate: 3.10.6-1~22.04.1
+  Version table:
+ *** 3.10.6-1~22.04.1 500
+        500 http://hr.archive.ubuntu.com/ubuntu jammy-updates/main amd64 Packages
+        100 /var/lib/dpkg/status
+     3.10.6-1~22.04 500
+        500 http://security.ubuntu.com/ubuntu jammy-security/main amd64 Packages
+     3.10.4-0ubuntu2 500
+        500 http://hr.archive.ubuntu.com/ubuntu jammy/main amd64 Packages
 
-numpy
+```
+Any subversion of Python 3.10 will work fine, and most of lower wersion should as well.
+
+Your installation of ROS should also come with numpy with appropriate version installed, you can check that by running:
+```bash
+pip list | grep numpy
+```
+where you should get output:
+```
+numpy                                1.21.5
+```
+any version (right column) starting with 1 should be alright.
+
+If you do not have numpy installed you can do so with:
 ```bash 
 pip install numpy==1.26.4
 ```
+And you also need to install additional packages:
+
 scipy
 ```bash
 pip install scipy
@@ -28,6 +64,10 @@ scikit
 ```bash
 pip install scikit-surgerynditracker
 ```
+
+**Robot ROS suport**
+
+To use this robot with ROS you will need to install open source support package. For installation follow the instructions on [their page](https://github.com/lbr-stack/lbr_fri_ros2_stack/tree/humble)
 
 ## Usage
 
@@ -51,4 +91,4 @@ Comunication with the camera is done trough camera_extraction_data.py program. I
 
 ### Tracking
 
-To acheave the tracking of the marker you first need to start the ServoTrackingTest app on the robot's controller and then the camera_extraction_data.py on the PC. Both programs are stoped by stoping app on the robot.
+For the tracking to start run ROS interface on the robot's controller and launch ROS packages on the PC
