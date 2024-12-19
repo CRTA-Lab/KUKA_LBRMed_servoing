@@ -169,5 +169,26 @@
             </frames>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
         </toolTemplate>
+        <toolTemplate class="" name="mock_sonda">
+            <frames>
+                <frame id="_921ce376-e542-4af8-a23e-67aca50d5f66" name="TCP">
+                    <transformation a="0.785398" b="0.0" c="0.0" x="-157.4" y="149.62086292119983" z="148.4128629870752"/>
+                </frame>
+                <frame id="_6dfcf607-3b8c-46c1-8892-9c9c24c7f468" name="UZV_cent">
+                    <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
+                </frame>
+            </frames>
+            <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.6"/>
+        </toolTemplate>
+        <toolTemplate class="" defaultMotionFrameRef="/UZV_calib" name="SonoScape_sonda">
+            <frames>
+                <frame id="_a91e804b-e06d-4f1b-a8af-72c4e71424f5" name="UZV_calib">
+                    <transformation a="-0.7442032215233745" b="0.017144323000257082" c="1.5189457260692698" x="-131.630040314913" y="120.87695330728648" z="116.66740547558672"/>
+                    <measurementTranslation calculationError="2.2649344777695606" method="XYZ4Point" timestamp="1734441488266"/>
+                    <measurementRotation method="ABC2Point" timestamp="1734442785130"/>
+                </frame>
+            </frames>
+            <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.9"/>
+        </toolTemplate>
     </objectTemplates>
 </RoboticsAPIData>

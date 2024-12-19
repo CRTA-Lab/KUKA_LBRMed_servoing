@@ -11,7 +11,7 @@
             <Interface id="com.kuka/Controller/EtherCAT" version="0.1.0"/>
             <Interface id="com.kuka/Controller/Windows" version="0.1.18"/>
             <Interface id="com.kuka/Controller/Controller" version="0.1.0"/>
-            <TopologyItem itemPath="com.kuka/LBR5_7kgMed" name="LBR_Med_7_R800_1" selectedVersion="2" uniqueID="a6b61d38-4269-4865-b559-3eb4533f554e">
+            <TopologyItem itemPath="com.kuka/LBR5_7kgMed" name="LBR_Med_7_R800_1" selectedVersion="2" uniqueID="d3345777-f88d-4b15-98d8-61c311fd0b74">
                 <Interface id="com.kuka/Robot/Payload" version="0.7.0"/>
                 <Interface id="com.kuka/LBR5/LBRHardware" version="0.1.0"/>
                 <Interface id="com.kuka/LBR/LBR5" version="0.1.0"/>
@@ -21,11 +21,6 @@
                 <Interface id="com.kuka/Robot/Robot" version="0.1.0"/>
                 <Property displayName="userName" key="userName" type="String">
                     <Value>LBR_Med_7_R800_1</Value>
-                </Property>
-                <Property displayName="Medien-Flansch" key="MAM" showInEditor="true" showInWizard="true" type="String">
-                    <Value displayName="Medien-Flansch Inside elektrisch">MADA=MF&amp;IOConfig=Default</Value>
-                    <PossibleValue displayName="None (M0)">MADA=M0&amp;IOConfig=Default</PossibleValue>
-                    <PossibleValue displayName="Medien-Flansch Inside elektrisch">MADA=MF&amp;IOConfig=Default</PossibleValue>
                 </Property>
                 <PropertyGroup displayName="Montage-Richtung" key="ROBROOT" showInEditor="true" showInWizard="true">
                     <Property displayName="X in mm" key="X" type="Double">
@@ -214,6 +209,12 @@
             </SoftwareItem>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="KUKA Option Network Interface" installItem="true" installedVersion="1" itemPath="com.kuka/KONISupport" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/KONISupport/KONISupport" version="0.1.0"/>
+                <Property displayName="IP" key="KONI_IP" optional="true" showInEditor="true" type="String">
+                    <Value>192.168.40.250</Value>
+                </Property>
+                <Property displayName="SubnetMask" key="KONI_SubnetMask" optional="true" showInEditor="true" type="String">
+                    <Value>FFFF0000</Value>
+                </Property>
             </SoftwareItem>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="KrcDiag" installItem="true" installedVersion="8.5.8.9" itemPath="com.kuka/KrcDiag" selectedVersion="8.5.8.9" usage="Library">
                 <Interface id="com.kuka/KrcDiag/KrcDiag" version="8.5.8"/>
@@ -228,20 +229,22 @@
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="LBRCompounds" installItem="true" installedVersion="1" itemPath="com.kuka/LBRCompounds" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/LBRCompounds/LBRCompounds" version="0.1.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="LBRMedConfig" installItem="true" installedVersion="1" itemPath="com.kuka/LBRMedConfig" selectedVersion="1" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="LBRMedConfig" installItem="true" installedVersion="NONE" itemPath="com.kuka/LBRMedConfig" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/Sunrise/DeviceConfig" version="0.1.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 14kg Kinematics" installItem="true" installedVersion="NONE" itemPath="com.kuka/Madas_LBR5_14kg_Kin" selectedVersion="NONE" usage="Library"/>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 7kg Drives" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_7kg_CF" selectedVersion="1" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 14kg Kinematics" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_14kg_Kin" selectedVersion="NONE" usage="Library">
+                <Interface id="com.kuka/LBR/Madas_LBR5_14kg_Kin" version="0.1.0"/>
+            </SoftwareItem>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 7kg Drives" installItem="true" installedVersion="NONE" itemPath="com.kuka/Madas_LBR5_7kg_CF" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/LBR/Mada" version="0.1.0"/>
                 <Interface id="com.kuka/ServoFiles/ServoFiles" version="0.8.4"/>
                 <Interface id="com.kuka/MotorFiles/MotorFiles" version="0.8.4"/>
                 <Interface id="com.kuka/EtherCATConfig/CTRLBUS" version="0.1.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 7kg Kinematics" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_7kg_Kin" selectedVersion="1" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 7kg Kinematics" installItem="true" installedVersion="NONE" itemPath="com.kuka/Madas_LBR5_7kg_Kin" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/LBR/Madas_LBR5_7kg_Kin" version="0.1.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="Safe MADA LBR5 7kg" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_7kg_Safe" selectedVersion="1" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="Safe MADA LBR5 7kg" installItem="true" installedVersion="NONE" itemPath="com.kuka/Madas_LBR5_7kg_Safe" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/LBR/SafeMada" version="0.1.0"/>
             </SoftwareItem>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MediaFlangeIOConfig" installItem="true" installedVersion="1" itemPath="com.kuka/MediaFlangeIOConfig" selectedVersion="1" usage="Library">
@@ -357,7 +360,7 @@
                 <Interface id="com.kuka/SunriseFramework/SunriseServiceRecordInterface_Safety" version="0.1.1"/>
                 <Interface id="com.kuka/Safety/SunriseSafetySignalProvider" version="0.1.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="SunriseMedCyclicBrakeTest" installItem="true" installedVersion="1" itemPath="com.kuka/SunriseMedCyclicBrakeTest" selectedVersion="1" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="SunriseMedCyclicBrakeTest" installItem="true" installedVersion="NONE" itemPath="com.kuka/SunriseMedCyclicBrakeTest" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/SunriseMedCyclicBrakeTest/SunriseMedCyclicBrakeTest" version="0.1.0"/>
             </SoftwareItem>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="SunriseMedTrocarHandguiding" installItem="true" installedVersion="1" itemPath="com.kuka/SunriseMedTrocarHandguiding" selectedVersion="1" usage="Library">
@@ -403,7 +406,7 @@
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="XMLSUA" installItem="true" installedVersion="1.1" itemPath="com.kuka/XMLSUA" selectedVersion="1.1" usage="Library">
                 <Interface id="com.kuka/XMLSUA/XMLSUA" version="0.1.1"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.appframework.kxrreader" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.appframework.kxrreader" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.appframework.kxrreader" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.appframework.kxrreader" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/Bundle/com.kuka.appframework.kxrreader" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.appframework.kxrreader" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.appframework.kxrreader.exceptions" version="1.0.0"/>
@@ -614,34 +617,34 @@
                 <Interface id="com.kuka/OSGi/com.kuka.mastering.provider.api.motions" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.mastering.provider.api.features" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.brakesOnlyIfError" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.brakesOnlyIfError" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.brakesOnlyIfError" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.brakesOnlyIfError" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/Bundle/com.kuka.med.brakesOnlyIfError" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.med.brakesOnlyIfError" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.brakesOnlyIfError.osgi" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.brakesOnlyIfError.osgi" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.brakesOnlyIfError.osgi" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.brakesOnlyIfError.osgi" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/Bundle/com.kuka.med.brakesOnlyIfError.osgi" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.jogging" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.jogging" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.jogging" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.jogging" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/OSGi/com.kuka.med.jogging" version="1.0.0"/>
                 <Interface id="com.kuka/Bundle/com.kuka.med.jogging" version="1.0.0"/>
                 <Interface id="com.kuka/com.kuka.med.jogging/SunriseMedJogging" version="0.1.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.lbrMedExamples" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.lbrMedExamples" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.lbrMedExamples" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.lbrMedExamples" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/Bundle/com.kuka.med.lbrMedExamples" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.mastering" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.mastering" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.mastering" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.mastering" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/OSGi/com.kuka.med.mastering" version="1.0.0"/>
                 <Interface id="com.kuka/com.kuka.med.mastering/SunriseMedMastering" version="0.1.0"/>
                 <Interface id="com.kuka/Bundle/com.kuka.med.mastering" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.medController" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.medController" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.medController" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.medController" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/Bundle/com.kuka.med.medController" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.med.deviceModel" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.med.controllerModel" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.med.cyclicBrakeTest" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.med.robotStateEvent" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.robotState" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.robotState" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.robotState" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.robotState" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/OSGi/com.kuka.med.robotState" version="1.0.0"/>
                 <Interface id="com.kuka/Bundle/com.kuka.med.robotState" version="1.0.0"/>
             </SoftwareItem>
@@ -652,11 +655,11 @@
                 <Interface id="com.kuka/OSGi/com.kuka.roboticsAPI.controllerModel.sunrise.mapping" version="1.15.0"/>
                 <Interface id="com.kuka/Bundle/com.kuka.med.trocarHandguiding" version="1.15.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.unmasteredApp.api" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.unmasteredApp.api" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.unmasteredApp.api" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.unmasteredApp.api" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/OSGi/com.kuka.med.unmasteredApp" version="1.0.0"/>
                 <Interface id="com.kuka/Bundle/com.kuka.med.unmasteredApp.api" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.unmasteredApp.runtime" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.med.unmasteredApp.runtime" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.med.unmasteredApp.runtime" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.med.unmasteredApp.runtime" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/OSGi/com.kuka.med.unmasteredApp.runtime" version="1.0.0"/>
                 <Interface id="com.kuka/Bundle/com.kuka.med.unmasteredApp.runtime" version="1.0.0"/>
             </SoftwareItem>
@@ -877,22 +880,18 @@
                 <Interface id="com.kuka/OSGi/com.kuka.task.provider.behaviors" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.task.provider.pause" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="LBR Med" installItem="true" installedVersion="1.1" itemPath="com.kuka/lbrMed" selectedVersion="1.1" usage="Feature">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="LBR Med" installItem="true" installedVersion="NONE" itemPath="com.kuka/lbrMed" selectedVersion="1.1" usage="Feature">
                 <Interface id="com.kuka/lbrMed/lbrMedFeature" version="1.0.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="LBR Med example applications" installItem="true" installedVersion="1.1" itemPath="com.kuka/lbrMedExamples" selectedVersion="1.1" usage="Feature"/>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="LBR Med example applications" installItem="true" installedVersion="NONE" itemPath="com.kuka/lbrMedExamples" selectedVersion="1.1" usage="Feature"/>
             <Property displayName="userName" key="userName" type="String">
                 <Value>KUKA_Sunrise_Cabinet_1</Value>
             </Property>
             <Property displayName="IP" key="IP" showInEditor="true" type="String">
-                <Value>192.168.40.200</Value>
+                <Value>172.1.31.100</Value>
             </Property>
-            <Property displayName="IP address range for KUKA Line Interface" key="KLI_IP_Range" showInEditor="true" type="String">
-                <Value displayName="192.*.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=172.18.0.2&amp;WinIP=172.18.0.1</Value>
-                <PossibleValue displayName="Other">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
-                <PossibleValue displayName="192.*.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=172.18.0.2&amp;WinIP=172.18.0.1</PossibleValue>
-                <PossibleValue displayName="172.16.*.*">RTIp=172.18.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
-                <PossibleValue displayName="172.17.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.18.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
+            <Property displayName="SubnetMask" key="SubnetMask" showInEditor="true" type="String">
+                <Value>FFFFFF00</Value>
             </Property>
         </TopologyItem>
         <Property displayName="userName" key="userName" type="String">
