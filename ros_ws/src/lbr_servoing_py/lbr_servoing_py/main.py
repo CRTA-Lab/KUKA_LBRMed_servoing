@@ -19,7 +19,7 @@ class ServoingNode(Node):
         self.declare_parameter('mode','')
         self.mode = self.get_parameter('mode').get_parameter_value().string_value
 
-        self.position_publisher = self.create_publisher(TwistStamped,"delta_twist_cmds",qos_profile_system_default)
+        self.position_publisher = self.create_publisher(TwistStamped,"/lbr/servo_node/delta_twist_cmds",qos_profile_system_default)
 
         self.create_subscription(Vector3Stamped,'phantom_position',self.postion_callback,qos_profile_system_default)
         self.create_subscription(Vector3Stamped,'phantom_position_filt',self.postion_filt_callback,qos_profile_system_default)
@@ -42,8 +42,8 @@ class ServoingNode(Node):
         x = msg.vector.x
         y = msg.vector.y
         pub_msg = TwistStamped()
-        pub_msg.twist.linear.x = x
-        pub_msg.twist.linear.y = y
+        pub_msg.twist.linear.x = x/1000
+        pub_msg.twist.linear.y = y/1000
         self.position_publisher.publish(pub_msg)
         return
     
