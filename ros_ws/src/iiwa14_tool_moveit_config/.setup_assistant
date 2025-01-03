@@ -1,0 +1,10 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: lbr_description
+    relative_path: urdf/iiwa14_tool/iiwa14_tool.xacro
+  srdf:
+    relative_path: config/iiwa14.srdf
+  package_settings:
+    author_name: matija
+    author_email: matija.markulin@fsb.unizg.hr
+    generated_timestamp: 1735891372
