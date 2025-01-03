@@ -20,31 +20,33 @@ def generate_launch_description():
 
     model = DeclareLaunchArgument(
         'model',
-        default_value='iiwa14',
+        default_value='iiwa14_tool',
         description='Used lbr model',
-        choices=['iiwa7', 'iiwa14', 'med7', 'med14']
+        choices=['iiwa7', 'iiwa14', 'med7', 'med14','iiwa14_tool']
     )
 
     mode = DeclareLaunchArgument(
         'mode',
-        default_value='gazebo',
+        default_value='hardware',
         description='Used lbr model',
         choices=['gazebo','mock','hardware']
     )
+    
     namespace = LaunchConfiguration('namespace')
+    
 
     robot_description = IncludeLaunchDescription(
-      PythonLaunchDescriptionSource([os.path.join(
-         get_package_share_directory('lbr_bringup'), 'launch'),
-         '/gazebo.launch.py']),
-         launch_arguments={'model': LaunchConfiguration('model'), 'ctrl':'forward_position_controller'}.items(),
+    PythonLaunchDescriptionSource([os.path.join(
+        get_package_share_directory('lbr_bringup'), 'launch'),
+        '/hardware.launch.py']),
+        launch_arguments={'model': LaunchConfiguration('model'), 'ctrl':'forward_position_controller'}.items(),
     )
 
     moveit_servo = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('lbr_bringup'), 'launch'),
          '/moveit_servo.launch.py']),
-         launch_arguments={'model': LaunchConfiguration('model'), 'mode':LaunchConfiguration('mode')}.items(),
+         launch_arguments={'model': LaunchConfiguration('model'), 'mode':LaunchConfiguration('mode')}.items(), 
 
     )
 
