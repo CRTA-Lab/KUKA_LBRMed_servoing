@@ -20,7 +20,7 @@ class CircleDetectionNode(Node):
             self.get_logger().error('No video stream')
         self.create_timer(1/30, self.img_read, callback_group=cb_timer)
         self.data_buffer = np.zeros((150, 3))
-        self.filter = butter(3, 3, btype='lowpass', output='sos', fs=30)
+        self.filter = butter(2, 5, btype='lowpass', output='sos', fs=30)
         zi = sosfilt_zi(self.filter)
         self.zi = np.dstack((zi, zi, zi))
 
@@ -163,9 +163,9 @@ class CircleDetectionNode(Node):
         else:
             self.info('no circle')
             msg = Vector3Stamped()
-            msg.vector.x = 0
-            msg.vector.y = 0
-            msg.vector.z = 0
+            msg.vector.x = 0.0
+            msg.vector.y = 0.0
+            msg.vector.z = 0.0
             self.position_publisher.publish(msg)
             # Show the image
             cv2.imshow('slika', image)

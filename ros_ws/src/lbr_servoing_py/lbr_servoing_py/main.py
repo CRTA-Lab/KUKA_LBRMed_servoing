@@ -38,8 +38,8 @@ class ServoingNode(Node):
         self.declare_parameter('mode','')
         self.mode = self.get_parameter('mode').get_parameter_value().string_value
 
-        self.xPID = PID(-0.5,0,0,1/30)
-        self.yPID = PID(0.5,0,0,1/30)
+        self.xPID = PID(-0.8,0,0,1/30)
+        self.yPID = PID(0.8,0,0,1/30)
 
         self.position_publisher = self.create_publisher(TwistStamped,"/lbr/servo_node/delta_twist_cmds",qos_profile_sensor_data)
 
