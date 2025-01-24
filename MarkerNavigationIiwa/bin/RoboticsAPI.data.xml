@@ -63,6 +63,18 @@
             <additionalInformation>
                 <info key="LastModificationTime" type="java.lang.Long" value="1730881481372"/>
             </additionalInformation>
+            <frame id="_4d5832de-9a13-4563-8582-cb68c25696b8" name="sweep_frame">
+                <transformation a="0.0" b="0.0" c="-0.0050" x="0.0" y="0.0" z="0.0"/>
+                <additionalInformation>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1737707727991"/>
+                </additionalInformation>
+            </frame>
+            <frame id="_4411f5cf-0939-4005-8bed-5118b40e5a77" name="sweep_frame_lin">
+                <transformation a="0.0" b="0.0" c="0.0" x="0.5" y="0.0" z="0.0"/>
+                <additionalInformation>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1736510167453"/>
+                </additionalInformation>
+            </frame>
         </frame>
         <frame id="_fafa8401-6202-4527-a5ea-29d248c944fa" name="P1">
             <transformation a="1.4298695081219273" b="-0.010785016170285202" c="3.0662374949418805" x="420.76505196614545" y="-188.86677179217926" z="131.0585941187247"/>
@@ -183,15 +195,28 @@
         <toolTemplate class="" defaultMotionFrameRef="/UZV_calib" name="SonoScape_sonda">
             <frames>
                 <frame id="_a91e804b-e06d-4f1b-a8af-72c4e71424f5" name="UZV_calib">
-                    <transformation a="-0.7442032215233745" b="0.017144323000257082" c="1.5189457260692698" x="-131.630040314913" y="120.87695330728648" z="116.66740547558672"/>
-                    <measurementTranslation calculationError="2.2649344777695606" method="XYZ4Point" timestamp="1734441488266"/>
-                    <measurementRotation method="ABC2Point" timestamp="1734442785130"/>
+                    <transformation a="2.3620769631587155" b="0.009536265746676596" c="-1.53630353743057" x="-123.66817565386064" y="117.09944630057241" z="116.65030457432367"/>
+                    <measurementTranslation calculationError="0.9783562619241124" method="XYZ4Point" timestamp="1736854892531"/>
+                    <measurementRotation method="ABC2Point" timestamp="1736944890809"/>
                 </frame>
                 <frame id="_b211beec-286d-41ac-a565-15bc06ad3ffe" name="os_sonde">
                     <transformation a="-0.7" b="0.02" c="1.5" x="-131.6" y="120.9" z="150.7"/>
                 </frame>
             </frames>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.9"/>
+        </toolTemplate>
+        <toolTemplate class="" defaultMotionFrameRef="/UZV_calib" name="SonoScape_sonda_V2">
+            <frames>
+                <frame id="_a7ee0a24-19c7-40a9-b142-5f1eece35c7d" name="os_sonde">
+                    <transformation a="-1.4" b="-1.6" c="-1.0" x="-47.9" y="45.6" z="277.6"/>
+                </frame>
+                <frame id="_5596590d-c77a-4438-b068-354dbc43f23e" name="UZV_calib">
+                    <transformation a="-1.4043454813325378" b="-1.5553229355216267" c="-0.953233240161257" x="-71.86932248781086" y="69.63598434155001" z="277.5864732692317"/>
+                    <measurementTranslation calculationError="1.5149346546268176" method="XYZ4Point" timestamp="1737703950902"/>
+                    <measurementRotation method="ABC2Point" timestamp="1737704605089"/>
+                </frame>
+            </frames>
+            <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
         </toolTemplate>
     </objectTemplates>
 </RoboticsAPIData>
