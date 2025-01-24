@@ -24,7 +24,8 @@ setup(
     entry_points={
         'console_scripts': [
                 'lbr_servoing=lbr_servoing_py.main:main',
-                'circle_detection=lbr_servoing_py.circle_detect:main'
+                'circle_detection=lbr_servoing_py.circle_detect:main',
+                'cone_detection=lbr_servoing_py.cone_detect:main'
         ],
     },
 )

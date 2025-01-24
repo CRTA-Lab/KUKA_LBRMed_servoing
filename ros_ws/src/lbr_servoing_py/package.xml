@@ -16,6 +16,7 @@
   <depend>geometry_msgs</depend>
   <depend>cv2</depend>
   <depend>numpy</depend>
+  <depend>random</depend>
   <depend>scipy</depend>
   <depend>ros2launch</depend>
 

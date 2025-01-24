@@ -56,13 +56,13 @@ def generate_launch_description():
 
     Node(
         package='lbr_servoing_py',
-        executable='circle_detection',
+        executable='cone_detection',
         output='log',
     )
 
     ])
 
-    servoing = GroupAction([
+    servoing = GroupAction([    
     PushRosNamespace(namespace),
 
     Node(
