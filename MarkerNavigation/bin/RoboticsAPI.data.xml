@@ -63,6 +63,12 @@
             <additionalInformation>
                 <info key="LastModificationTime" type="java.lang.Long" value="1730881481372"/>
             </additionalInformation>
+            <frame id="_e945be26-609d-4948-8e9c-ace5b1ffa9cc" name="sweep_point">
+                <transformation a="0.0" b="0.0" c="0.0020" x="0.0" y="0.0" z="0.0"/>
+                <additionalInformation>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1736247558289"/>
+                </additionalInformation>
+            </frame>
         </frame>
         <frame id="_fafa8401-6202-4527-a5ea-29d248c944fa" name="P1">
             <transformation a="1.4298695081219273" b="-0.010785016170285202" c="3.0662374949418805" x="420.76505196614545" y="-188.86677179217926" z="131.0585941187247"/>
