@@ -19,7 +19,7 @@ class ConeDetectionNode(Node):
         self.cap = cv2.VideoCapture(0)
         self.boje = [(randint(0,255),randint(0,255),randint(0,255)) for i in range(10)]
         self.data_buffer = np.zeros((150, 3))
-        self.filter = butter(2, 5, btype='lowpass', output='sos', fs=30)
+        self.filter = butter(3, 3, btype='lowpass', output='sos', fs=30)
         zi = sosfilt_zi(self.filter)
         self.zi = np.dstack((zi, zi, zi))
         
@@ -70,8 +70,17 @@ class ConeDetectionNode(Node):
         #blurred = cv2.medianBlur(gray, 3)
         # blurred = cv2.GaussianBlur(gray,(7,7),5)
 
+        contours, _ = cv2.findContours(thresholded_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        edges = cv2.Canny(thresholded_image, 50, 150, apertureSize=3)
+        sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+        blank = np.zeros(thresholded_image.shape, dtype=np.uint8)
+        if len(contours):
+            cv2.drawContours(blank,[sorted_contours[0]],-1,255,-1)
+        #blank = cv2.cvtColor(blank, cv2.COLOR_BGR2GRAY)
+
+
+        edges = cv2.Canny(blank, 50, 150, apertureSize=3)
         
         #Detect lines using Hough Line Transform
 
@@ -227,7 +236,8 @@ class ConeDetectionNode(Node):
         #cv2.circle(image,(int(b),int(a)),int(r),(0,255,0),2)
 
         cv2.imshow('Stylus with Intersection', image)
-        #cv2.imshow('edges',edges)
+        cv2.imshow('edges',edges)
+        cv2.imshow('mask',blank)
 
         cv2.waitKey(1)
         return

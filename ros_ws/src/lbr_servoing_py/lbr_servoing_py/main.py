@@ -60,7 +60,13 @@ class ServoingNode(Node):
         pub_msg = TwistStamped()
         pub_msg.twist.linear.x = self.xPID.update(x)
         pub_msg.twist.linear.y = self.yPID.update(y)
-        pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)
+        if angle < 0.3:
+            pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)*0.5
+        if angle < 0.1:
+            pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)*0.2
+        else:
+            pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)
+        
         #pub_msg.twist.linear.z = -x/100 - y/100
         pub_msg.header.stamp = self.get_clock().now().to_msg()
         self.position_publisher.publish(pub_msg)
@@ -76,7 +82,12 @@ class ServoingNode(Node):
         pub_msg = TwistStamped()
         pub_msg.twist.linear.x = self.xPID.update(x)
         pub_msg.twist.linear.y = self.yPID.update(y)
-        pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)
+        if angle < 0.3:
+            pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)*0.5
+        if angle < 0.1:
+            pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)*0.2
+        else:
+            pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)
         #pub_msg.twist.linear.z = -x/100 - y/100
         pub_msg.header.stamp = self.get_clock().now().to_msg()
         self.position_publisher.publish(pub_msg)
