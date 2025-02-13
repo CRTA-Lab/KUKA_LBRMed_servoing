@@ -48,7 +48,9 @@ class ServoingNode(Node):
         self.create_subscription(Vector3Stamped,'phantom_position_filt',self.postion_filt_callback,qos_profile_system_default)
 
         self.prev = 0
+        self.prevprev = 0
         self.direction = 1
+        self.best_angle = np.pi
 
 
     def postion_callback(self,msg:Vector3Stamped):
@@ -82,10 +84,17 @@ class ServoingNode(Node):
         pub_msg = TwistStamped()
         pub_msg.twist.linear.x = self.xPID.update(x)
         pub_msg.twist.linear.y = self.yPID.update(y)
-        if angle < 0.3:
+        if angle < self.best_angle:
+            self.best_angle = angle
+        self.prevprev = self.prev
+        self.prev = angle
+        angle = angle - self.best_angle
+        if angle < 2*np.pi/180:
             pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)*0.5
-        if angle < 0.1:
+        if angle < 0.5*np.pi/180:
             pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)*0.2
+        if angle < 0.1*np.pi/180:
+            pub_msg.twist.linear.z = 0
         else:
             pub_msg.twist.linear.z = self.zPID.update(self.direction*angle)
         #pub_msg.twist.linear.z = -x/100 - y/100
