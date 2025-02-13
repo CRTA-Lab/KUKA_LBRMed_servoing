@@ -14,10 +14,13 @@ find_package(rclcpp REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MarkerTf.msg"
+  "msg/ImageMeta.msg"
   DEPENDENCIES std_msgs
+  DEPENDENCIES sensor_msgs
 )
 
 if(BUILD_TESTING)
