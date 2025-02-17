@@ -12,6 +12,8 @@
     <group name="arm">
         <chain base_link="lbr_link_0" tip_link="lbr_link_ee"/>
     </group>
+    <!--END EFFECTOR: Purpose: Represent information about an end effector.-->
+    <end_effector name="US_probe" parent_link="lbr_link_ee" group="arm" parent_group="arm"/>
     <!--DISABLE COLLISIONS: By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. -->
     <disable_collisions link1="lbr_link_0" link2="lbr_link_1" reason="Adjacent"/>
     <disable_collisions link1="lbr_link_0" link2="lbr_link_2" reason="Never"/>
