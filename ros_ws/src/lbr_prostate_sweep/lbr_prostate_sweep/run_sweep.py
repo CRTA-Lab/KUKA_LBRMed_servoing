@@ -37,7 +37,8 @@ class SweepNode(Node):
         self.base_frame = 'lbr_link_0'
         self.TCP_frame = 'lbr_link_ee'
         self.init_pose = None
-        self.back_flag = False
+        self.back_flag = True
+        self.zcf = True
 
         self.get_logger().info('Init done')
 
@@ -48,6 +49,7 @@ class SweepNode(Node):
         '''
         pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
         self.init_pose = Rotation.from_quat([pose.transform.rotation.x, pose.transform.rotation.y, pose.transform.rotation.z, pose.transform.rotation.w]).as_euler('ZYX',degrees=True)[2]
+        self.init_pose += 360
         return
 
     def image_cb(self,msg:ImageMeta):
@@ -61,22 +63,19 @@ class SweepNode(Node):
             # get current value of rotation around probe's axis
             pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
             pose = Rotation.from_quat([pose.transform.rotation.x, pose.transform.rotation.y, pose.transform.rotation.z, pose.transform.rotation.w]).as_euler('ZYX',degrees=True)[2]
-            
-            # calcluate the distance from initial position
-            delta = pose - self.init_pose
+            pose += 360
 
-            # scale delta between -180 and 180 deg
-            if delta > 180:
-                delta -= 360
-            elif delta < -180: 
-                delta +=360
+            # calcluate the distance from initial position
+            delta = min(abs(pose - self.init_pose),360-abs(pose - self.init_pose))
+            self.get_logger().info('Delta = {}'.format(delta))
             
-            # check if angle is in +/- 35 deg raange and flip rotation if it is not
+            # check if angle is in +/- 35 deg range and flip rotation if it is not
             # TODO remove hard stop angles and stop when end of prostate is reached
-            if delta > 35:
-                self.back_flag = True
+            if delta > 35 and self.zcf:
+                self.back_flag = not self.back_flag
+                self.zcf = False
             elif delta < -35:
-                self.back_flag = False
+                self.zcf = True
 
             # create and publish msg
             msg_out = TwistStamped()

@@ -77,7 +77,7 @@ class ImageAquisition(Node):
             angle = rot.as_euler('ZYX',degrees=False)[2]
         # when transformation could not be obtained angle is noted sa infinite    
         except Exception as e:
-            self.get_logger().warning('dogodila se graska : {}'.format(e))
+            #self.get_logger().warning('dogodila se graska : {}'.format(e))
             angle = float('inf')
 
         # creating an publishing the msg
