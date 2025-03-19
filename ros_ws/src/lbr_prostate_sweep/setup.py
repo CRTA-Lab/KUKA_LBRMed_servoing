@@ -23,7 +23,8 @@ setup(
     entry_points={
         'console_scripts': [
             'us_acquisition=lbr_prostate_sweep.img_acq:main',
-            'run_sweep=lbr_prostate_sweep.run_sweep:main'
+            'run_sweep=lbr_prostate_sweep.run_sweep:main',
+            'run_sweep_serv=lbr_prostate_sweep.run_sweep_serv:main'
         ],
     },
 )

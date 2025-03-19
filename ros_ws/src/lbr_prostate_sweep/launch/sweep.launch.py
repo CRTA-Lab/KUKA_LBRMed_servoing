@@ -67,7 +67,7 @@ def generate_launch_description():
 
     Node(
         package='lbr_prostate_sweep',
-        executable='run_sweep',
+        executable='run_sweep_serv',
         output='log',
     )
 
