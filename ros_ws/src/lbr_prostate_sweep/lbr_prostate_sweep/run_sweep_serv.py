@@ -4,7 +4,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
 from rclpy.callback_groups import ReentrantCallbackGroup
 from tf2_ros.buffer import Buffer
-from tf2_ros.transform_listener import TransformListener 
+from tf2_ros import TransformListener, TransformBroadcaster
 from custom_interfaces.msg import ImageMeta
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import TwistStamped
@@ -26,6 +26,7 @@ class SweepNode(Node):
         self.bridge = CvBridge()
         self.pub_sub_cbg = ReentrantCallbackGroup()
         self.serv_cbg = ReentrantCallbackGroup()
+        self.time_cbg = ReentrantCallbackGroup()
         # create subscription on the US_image topic
         self.img_sub = self.create_subscription(ImageMeta,'/US_image',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
@@ -38,6 +39,8 @@ class SweepNode(Node):
         # initialize transfrom listener to obtain the transformation between robot base and TCP
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.tf_broadcaster = TransformBroadcaster(self)
+        self.tf_timer = self.create_timer(0.0002,self.broadcast_init_pose,callback_group=self.time_cbg)
 
         # initializeing the variables
         self.base_frame = 'lbr_link_0'
@@ -73,10 +76,20 @@ class SweepNode(Node):
         Args : self
         Out: None
         '''
-        pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
-        self.init_pose = Rotation.from_quat([pose.transform.rotation.x, pose.transform.rotation.y, pose.transform.rotation.z, pose.transform.rotation.w]).as_euler('ZYX',degrees=True)[2]
-        self.init_pose += 360
+        self.init_pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
+        self.init_pose.child_frame_id = 'init_pose'
+        self.init_pose.header.frame_id = 'world'
         return
+
+
+    def broadcast_init_pose(self):
+        if self.init_pose != None:
+            pose = self.init_pose
+            pose.header.stamp = self.get_clock().now().to_msg()
+            self.tf_broadcaster.sendTransform(pose)
+        return
+
+
 
     def image_cb(self,msg:ImageMeta):
         '''Method for performing the sweep. Method is called at for every new US image that gets sent over the network
@@ -111,9 +124,9 @@ class SweepNode(Node):
             # create and publish msg
             msg_out = TwistStamped()
             if self.back_flag:
-                msg_out.twist.angular.x = 1.0
-            else:
                 msg_out.twist.angular.x = -1.0
+            else:
+                msg_out.twist.angular.x = 1.0
             msg_out.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg_out)
 
