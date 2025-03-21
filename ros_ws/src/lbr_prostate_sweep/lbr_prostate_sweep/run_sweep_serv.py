@@ -40,7 +40,7 @@ class SweepNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.tf_broadcaster = TransformBroadcaster(self)
-        self.tf_timer = self.create_timer(0.0002,self.broadcast_init_pose,callback_group=self.time_cbg)
+        self.tf_timer = self.create_timer(0.01,self.broadcast_init_pose,callback_group=self.time_cbg)
 
         # initializeing the variables
         self.base_frame = 'lbr_link_0'
@@ -76,9 +76,9 @@ class SweepNode(Node):
         Args : self
         Out: None
         '''
-        self.init_pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
+        self.init_pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
         self.init_pose.child_frame_id = 'init_pose'
-        self.init_pose.header.frame_id = 'world'
+        #self.init_pose.header.frame_id = 'lbr_link_0'
         return
 
 
@@ -104,6 +104,7 @@ class SweepNode(Node):
                 self.get_logger().info('Sweep finished, stoping subscription')
                 self.destroy_subscription(self.img_sub)
                 return
+            self.get_logger().info(str(msg.angle))
             # get current value of rotation around probe's axis
             # pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
             # pose = Rotation.from_quat([pose.transform.rotation.x, pose.transform.rotation.y, pose.transform.rotation.z, pose.transform.rotation.w]).as_euler('ZYX',degrees=True)[2]

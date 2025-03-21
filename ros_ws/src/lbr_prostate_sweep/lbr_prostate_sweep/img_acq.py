@@ -68,27 +68,27 @@ class ImageAquisition(Node):
         ros_image = self.bridge.cv2_to_imgmsg(cv_image)
         ros_image.header.stamp = stamp
 
-        # try loop for reading the TCP transform, since node is started usualy before robot's controller at first there will be no data for transform and that will cause errors
-        # try:
-        #     trans = self.tf_buffer.lookup_transform(TCP_frame,sweep_frame,rclpy.time.Time())
-
-        #     # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
-        #     # KUKA uses zy'x'' notation of euler angles
-        #     rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
-        #     angle = rot.as_euler('ZYX',degrees=False)[2]
-        # except Exception as e:
-        #     self.get_logger().warning('dogodila se graska : {}'.format(e))
+        #try loop for reading the TCP transform, since node is started usualy before robot's controller at first there will be no data for transform and that will cause errors
         try:
-            trans = self.tf_buffer.lookup_transform(TCP_frame,base_frame,rclpy.time.Time())
+            trans = self.tf_buffer.lookup_transform(sweep_frame,TCP_frame,rclpy.time.Time())
 
-            # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
+            # transforming obtained quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
             # KUKA uses zy'x'' notation of euler angles
             rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
             angle = rot.as_euler('ZYX',degrees=False)[2]
-        # when transformation could not be obtained angle is noted sa infinite    
         except Exception as e:
-            #self.get_logger().warning('dogodila se graska : {}'.format(e))
-            angle = float('inf')
+            self.get_logger().warning('dogodila se graska : {}'.format(e))
+            try:
+                trans = self.tf_buffer.lookup_transform(base_frame,TCP_frame,rclpy.time.Time())
+
+                # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
+                # KUKA uses zy'x'' notation of euler angles
+                rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+                angle = rot.as_euler('ZYX',degrees=False)[2]
+            # when transformation could not be obtained angle is noted sa infinite    
+            except Exception as e:
+                #self.get_logger().warning('dogodila se graska : {}'.format(e))
+                angle = float('inf')
 
         # creating an publishing the msg
         msg = ImageMeta()
