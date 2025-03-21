@@ -40,7 +40,7 @@ class SweepNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.tf_broadcaster = TransformBroadcaster(self)
-        self.tf_timer = self.create_timer(0.01,self.broadcast_init_pose,callback_group=self.time_cbg)
+        self.tf_timer = self.create_timer(1/100,self.broadcast_init_pose,callback_group=self.time_cbg)
 
         # initializeing the variables
         self.base_frame = 'lbr_link_0'

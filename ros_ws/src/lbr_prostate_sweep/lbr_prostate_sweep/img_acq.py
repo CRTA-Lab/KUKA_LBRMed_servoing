@@ -30,7 +30,7 @@ class ImageAquisition(Node):
         self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default)
 
         # timer for periodicaly captureing the image from US
-        self.create_timer(1/46,self.get_image)
+        self.create_timer(1/23,self.get_image)
 
         # connecting to the US
         self.cap = cv2.VideoCapture(0)
