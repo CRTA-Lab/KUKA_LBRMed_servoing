@@ -19,6 +19,7 @@ find_package(sensor_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MarkerTf.msg"
   "msg/ImageMeta.msg"
+  "srv/Target.srv"
   DEPENDENCIES std_msgs
   DEPENDENCIES sensor_msgs
 )
