@@ -28,6 +28,7 @@ class AimNode(Node):
 
         self.target_serv = self.create_service(Target,'/sweep/target',self.store_target,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
         self.start_serv = self.create_service(Trigger,'/sweep/begin_biopsy',self.start_biopsy,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
+        self.next_target_serv = self.create_service(Trigger,'/sweep/next_target',self.next_target,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
         
         # initialize transfrom listener to obtain the transformation between robot base and TCP
         self.tf_buffer = Buffer()
@@ -39,6 +40,7 @@ class AimNode(Node):
         self.base_frame = 'init_pose'
         self.TCP_frame = 'lbr_link_ee'
         self.targets = []
+        self.target_no = 0
         self.start_flag = False
 
         self.get_logger().info('Init done')
@@ -49,9 +51,31 @@ class AimNode(Node):
         response.ack = True
         return response
     
-    def start_biopsy (self,request:Trigger.Request,response:Trigger.Response):
+    def start_biopsy(self,request:Trigger.Request,response:Trigger.Response):
         response.success = True
         self.start_flag = True
         return response
     
+    def next_target(self,request:Trigger.Request,response:Trigger.Response):
+        response.success = True
+        self.target_no += 1
+        if self.target_no > len(self.targets):
+            self.destroy_node()
+        return response
+    
+    
+    def aim(self):
+        if not self.start_flag:return
+        
+        trans = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
 
+        # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
+        # KUKA uses zy'x'' notation of euler angles
+        rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+        angle = rot.as_euler('ZYX',degrees=False)[2]
+        delta = self.targets[self.target_no]
+        if abs(delta) > 0.01:
+            msg = TwistStamped()
+            msg.twist.angular.x = 2*delta
+            msg.header.stamp = self.get_clock().now().to_msg()
+            self.twist_pub.publish(msg)
