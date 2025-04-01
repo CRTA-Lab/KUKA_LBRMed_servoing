@@ -6,7 +6,6 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from tf2_ros.buffer import Buffer
 from tf2_ros import TransformListener, TransformBroadcaster
 from custom_interfaces.msg import ImageMeta
-from custom_interfaces.srv import Target
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import TwistStamped, WrenchStamped
 from std_srvs.srv import Trigger
