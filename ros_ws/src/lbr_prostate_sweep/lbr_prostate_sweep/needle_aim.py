@@ -79,3 +79,20 @@ class AimNode(Node):
             msg.twist.angular.x = 2*delta
             msg.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg)
+
+
+
+def main():
+    '''main function, starts the node and spins it'''
+    rclpy.init()
+
+    node = AimNode()
+
+    while rclpy.ok():
+        rclpy.spin_once(node,timeout_sec=0.1)
+    node.destroy_node()
+    return
+   
+
+if __name__ == '__main__':
+    main()
