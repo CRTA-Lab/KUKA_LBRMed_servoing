@@ -73,12 +73,24 @@ def generate_launch_description():
 
     ])
 
+    aiming = GroupAction([    
+    PushRosNamespace(namespace),
+
+    Node(
+        package='lbr_prostate_sweep',
+        executable='needle_aim',
+        output='log',
+    )
+
+    ])
+
     ld = LaunchDescription([
             namespace_launch_arg,
             model,mode
     ])
     ld.add_action(image_acq)
     ld.add_action(servoing)
+    ld.add_action(aiming)
     ld.add_action(robot_description)
     ld.add_action(moveit_servo)
 

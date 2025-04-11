@@ -4,17 +4,17 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
 from rclpy.callback_groups import ReentrantCallbackGroup
 from tf2_ros.buffer import Buffer
-from tf2_ros.transform_listener import TransformListener 
+from tf2_ros import TransformListener, TransformBroadcaster
 from custom_interfaces.msg import ImageMeta
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import TwistStamped, WrenchStamped
 from std_srvs.srv import Trigger
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
 from scipy.spatial.transform import Rotation
 import time
-
+import math
 
 
 class SweepNode(Node):
@@ -26,8 +26,11 @@ class SweepNode(Node):
         self.bridge = CvBridge()
         self.pub_sub_cbg = ReentrantCallbackGroup()
         self.serv_cbg = ReentrantCallbackGroup()
+        self.time_cbg = ReentrantCallbackGroup()
         # create subscription on the US_image topic
         self.img_sub = self.create_subscription(ImageMeta,'/US_image',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        # create subscription on the wrench topic 
+        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # create publisher for moveit servo delta_twist_cmds topic
         self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_sensor_data,callback_group=self.pub_sub_cbg)
@@ -38,8 +41,11 @@ class SweepNode(Node):
         # initialize transfrom listener to obtain the transformation between robot base and TCP
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.tf_broadcaster = TransformBroadcaster(self)
+        self.tf_timer = self.create_timer(1/100,self.broadcast_init_pose,callback_group=self.time_cbg)
 
         # initializeing the variables
+        self.wrench = WrenchStamped()
         self.base_frame = 'lbr_link_0'
         self.TCP_frame = 'lbr_link_ee'
         self.start_flag = False
@@ -51,10 +57,15 @@ class SweepNode(Node):
 
         self.get_logger().info('Init done')
 
+    def ft_callback(self,msg:WrenchStamped):
+        self.wrench = msg
+        return
+
     def sweep_start(self,request:Trigger.Request,response:Trigger.Response):
         '''Callback for the start service, sets class variable for starting the sweep to True'''
         self.start_flag = True
         self.get_logger().info('Sweep started')
+        self.get_logger().info('Initial force = {}'.format(self.wrench))
         return response
 
 
@@ -73,10 +84,20 @@ class SweepNode(Node):
         Args : self
         Out: None
         '''
-        pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
-        self.init_pose = Rotation.from_quat([pose.transform.rotation.x, pose.transform.rotation.y, pose.transform.rotation.z, pose.transform.rotation.w]).as_euler('ZYX',degrees=True)[2]
-        self.init_pose += 360
+        self.init_pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
+        self.init_pose.child_frame_id = 'init_pose'
+        #self.init_pose.header.frame_id = 'lbr_link_0'
         return
+
+
+    def broadcast_init_pose(self):
+        if self.init_pose != None:
+            pose = self.init_pose
+            pose.header.stamp = self.get_clock().now().to_msg()
+            self.tf_broadcaster.sendTransform(pose)
+        return
+
+
 
     def image_cb(self,msg:ImageMeta):
         '''Method for performing the sweep. Method is called at for every new US image that gets sent over the network
@@ -91,6 +112,9 @@ class SweepNode(Node):
                 self.get_logger().info('Sweep finished, stoping subscription')
                 self.destroy_subscription(self.img_sub)
                 return
+            self.get_logger().info('Slice angle = {}'.format(msg.angle))
+            self.get_logger().info('Force applied = {}'.format(math.sqrt(self.wrench.wrench.force.y**2 + self.wrench.wrench.force.z**2)))
+
             # get current value of rotation around probe's axis
             # pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
             # pose = Rotation.from_quat([pose.transform.rotation.x, pose.transform.rotation.y, pose.transform.rotation.z, pose.transform.rotation.w]).as_euler('ZYX',degrees=True)[2]
@@ -111,9 +135,9 @@ class SweepNode(Node):
             # create and publish msg
             msg_out = TwistStamped()
             if self.back_flag:
-                msg_out.twist.angular.x = 1.0
+                msg_out.twist.angular.x = -0.6
             else:
-                msg_out.twist.angular.x = -1.0
+                msg_out.twist.angular.x = 0.6
             msg_out.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg_out)
 
