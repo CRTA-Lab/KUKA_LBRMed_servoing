@@ -47,7 +47,8 @@ class AimNode(Node):
         return
     
     def store_target(self,request:Target.Request,response:Target.Response):
-        self.targets.apend((request.x,request.y,request.angle))
+        self.targets.append((request.x,request.y,request.angle))
+        self.get_logger().info('Saved point : {}'.format(self.targets[-1]))
         response.ack = True
         return response
     
@@ -73,10 +74,16 @@ class AimNode(Node):
         # KUKA uses zy'x'' notation of euler angles
         rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
         angle = rot.as_euler('ZYX',degrees=False)[2]
-        delta = self.targets[self.target_no]
-        if abs(delta) > 0.01:
+        delta = self.targets[self.target_no][2] - angle
+        self.get_logger().info('Current angle: {}\tTarget angle: {}\tDelta: {}'.format(angle,self.targets[self.target_no][2],delta))
+        if abs(delta) > 0.001:
             msg = TwistStamped()
-            msg.twist.angular.x = 2*delta
+            ctrl = 5*delta
+            if ctrl > 1:
+                ctrl = float(1)
+            elif ctrl <-1:
+                ctrl = float(-1)
+            msg.twist.angular.x = ctrl
             msg.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg)
 
