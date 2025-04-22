@@ -64,9 +64,9 @@
                 <info key="LastModificationTime" type="java.lang.Long" value="1730881481372"/>
             </additionalInformation>
             <frame id="_4d5832de-9a13-4563-8582-cb68c25696b8" name="sweep_frame">
-                <transformation a="0.0" b="0.0" c="-0.0050" x="0.0" y="0.0" z="0.0"/>
+                <transformation a="0.0" b="0.0" c="-0.01" x="0.0" y="0.0" z="0.0"/>
                 <additionalInformation>
-                    <info key="LastModificationTime" type="java.lang.Long" value="1737707727991"/>
+                    <info key="LastModificationTime" type="java.lang.Long" value="1738827444208"/>
                 </additionalInformation>
             </frame>
             <frame id="_4411f5cf-0939-4005-8bed-5118b40e5a77" name="sweep_frame_lin">
@@ -208,12 +208,13 @@
         <toolTemplate class="" defaultMotionFrameRef="/UZV_calib" name="SonoScape_sonda_V2">
             <frames>
                 <frame id="_a7ee0a24-19c7-40a9-b142-5f1eece35c7d" name="os_sonde">
-                    <transformation a="-1.4" b="-1.6" c="-1.0" x="-47.9" y="45.6" z="277.6"/>
+                    <transformation a="-0.4129" b="-1.5593" c="-1.9199" x="-47.35" y="45.59" z="277.49"/>
                 </frame>
                 <frame id="_5596590d-c77a-4438-b068-354dbc43f23e" name="UZV_calib">
-                    <transformation a="-1.4043454813325378" b="-1.5553229355216267" c="-0.953233240161257" x="-71.86932248781086" y="69.63598434155001" z="277.5864732692317"/>
-                    <measurementTranslation calculationError="1.5149346546268176" method="XYZ4Point" timestamp="1737703950902"/>
-                    <measurementRotation method="ABC2Point" timestamp="1737704605089"/>
+                    <transformation a="-0.41287181379839194" b="-1.5593318404308576" c="-1.9199322604628943" x="-71.3862686405713" y="69.63006498265446" z="277.49"/>
+                </frame>
+                <frame id="_22a2faed-3c8d-4d05-977e-4febed609184" name="Frame_test">
+                    <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
                 </frame>
             </frames>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>

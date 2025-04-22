@@ -11,21 +11,21 @@
             <Interface id="com.kuka/Controller/EtherCAT" version="0.1.0"/>
             <Interface id="com.kuka/Controller/Windows" version="0.1.18"/>
             <Interface id="com.kuka/Controller/Controller" version="0.1.0"/>
-            <TopologyItem itemPath="com.kuka/LBR5_14kgMed" name="LBR_Med_14_R820_1" selectedVersion="2" uniqueID="ab0c5a3a-00fc-4843-9143-3f5b883eeab6">
+            <TopologyItem itemPath="com.kuka/LBR5_7kgMed" name="LBR_Med_7_R800_1" selectedVersion="2" uniqueID="aa5e13d3-18c7-4b58-8b16-97a8a04cf634">
+                <Interface id="com.kuka/Robot/Payload" version="0.7.0"/>
                 <Interface id="com.kuka/LBR5/LBRHardware" version="0.1.0"/>
                 <Interface id="com.kuka/LBR/LBR5" version="0.1.0"/>
                 <Interface id="com.kuka/LBR/Flansch" version="0.1.0"/>
                 <Interface id="com.kuka/LBR/LBR" version="0.1.0"/>
-                <Interface id="com.kuka/Robot/Payload" version="0.14.0"/>
                 <Interface id="com.kuka/LBR5/LBRMedHardware" version="0.1.0"/>
                 <Interface id="com.kuka/Robot/Robot" version="0.1.0"/>
                 <Property displayName="userName" key="userName" type="String">
-                    <Value>LBR_Med_14_R820_1</Value>
+                    <Value>LBR_Med_7_R800_1</Value>
                 </Property>
                 <Property displayName="Medien-Flansch" key="MAM" showInEditor="true" showInWizard="true" type="String">
                     <Value displayName="Medien-Flansch Inside elektrisch">MADA=MF&amp;IOConfig=Default</Value>
-                    <PossibleValue displayName="Medien-Flansch Inside elektrisch">MADA=MF&amp;IOConfig=Default</PossibleValue>
                     <PossibleValue displayName="None (M0)">MADA=M0&amp;IOConfig=Default</PossibleValue>
+                    <PossibleValue displayName="Medien-Flansch Inside elektrisch">MADA=MF&amp;IOConfig=Default</PossibleValue>
                 </Property>
                 <PropertyGroup displayName="Montage-Richtung" key="ROBROOT" showInEditor="true" showInWizard="true">
                     <Property displayName="X in mm" key="X" type="Double">
@@ -215,10 +215,7 @@
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="KUKA Option Network Interface" installItem="true" installedVersion="1" itemPath="com.kuka/KONISupport" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/KONISupport/KONISupport" version="0.1.0"/>
                 <Property displayName="IP" key="KONI_IP" optional="true" showInEditor="true" type="String">
-                    <Value>192.168.40.250</Value>
-                </Property>
-                <Property displayName="SubnetMask" key="KONI_SubnetMask" optional="true" showInEditor="true" type="String">
-                    <Value>FFFF0000</Value>
+                    <Value>192.168.0.111</Value>
                 </Property>
             </SoftwareItem>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="KrcDiag" installItem="true" installedVersion="8.5.8.9" itemPath="com.kuka/KrcDiag" selectedVersion="8.5.8.9" usage="Library">
@@ -237,20 +234,20 @@
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="LBRMedConfig" installItem="true" installedVersion="1" itemPath="com.kuka/LBRMedConfig" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/Sunrise/DeviceConfig" version="0.1.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 14kg Drives" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_14kg_CF" selectedVersion="1" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 14kg Kinematics" installItem="true" installedVersion="NONE" itemPath="com.kuka/Madas_LBR5_14kg_Kin" selectedVersion="NONE" usage="Library">
+                <Interface id="com.kuka/LBR/Madas_LBR5_14kg_Kin" version="0.1.0"/>
+            </SoftwareItem>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 7kg Drives" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_7kg_CF" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/LBR/Mada" version="0.1.0"/>
                 <Interface id="com.kuka/ServoFiles/ServoFiles" version="0.8.4"/>
                 <Interface id="com.kuka/MotorFiles/MotorFiles" version="0.8.4"/>
                 <Interface id="com.kuka/EtherCATConfig/CTRLBUS" version="0.1.0"/>
             </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 14kg Kinematics" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_14kg_Kin" selectedVersion="1" usage="Library">
-                <Interface id="com.kuka/LBR/Madas_LBR5_14kg_Kin" version="0.1.0"/>
-            </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="Safe MADA LBR5 14kg" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_14kg_Safe" selectedVersion="1" usage="Library">
-                <Interface id="com.kuka/LBR/SafeMada" version="0.1.0"/>
-            </SoftwareItem>
-            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 7kg Kinematics" installItem="true" installedVersion="NONE" itemPath="com.kuka/Madas_LBR5_7kg_Kin" selectedVersion="NONE" usage="Library">
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MADA LBR5 7kg Kinematics" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_7kg_Kin" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/LBR/Madas_LBR5_7kg_Kin" version="0.1.0"/>
+            </SoftwareItem>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="Safe MADA LBR5 7kg" installItem="true" installedVersion="1" itemPath="com.kuka/Madas_LBR5_7kg_Safe" selectedVersion="1" usage="Library">
+                <Interface id="com.kuka/LBR/SafeMada" version="0.1.0"/>
             </SoftwareItem>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="MediaFlangeIOConfig" installItem="true" installedVersion="1" itemPath="com.kuka/MediaFlangeIOConfig" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/EtherCATConfig/SYS_X48" version="0.1.0"/>
@@ -893,10 +890,17 @@
                 <Value>KUKA_Sunrise_Cabinet_1</Value>
             </Property>
             <Property displayName="IP" key="IP" showInEditor="true" type="String">
-                <Value>172.1.31.100</Value>
+                <Value>192.168.0.110</Value>
             </Property>
             <Property displayName="SubnetMask" key="SubnetMask" showInEditor="true" type="String">
                 <Value>FFFFFF00</Value>
+            </Property>
+            <Property displayName="IP address range for KUKA Line Interface" key="KLI_IP_Range" showInEditor="true" type="String">
+                <Value displayName="192.*.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=172.18.0.2&amp;WinIP=172.18.0.1</Value>
+                <PossibleValue displayName="Other">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
+                <PossibleValue displayName="192.*.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=172.18.0.2&amp;WinIP=172.18.0.1</PossibleValue>
+                <PossibleValue displayName="172.16.*.*">RTIp=172.18.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
+                <PossibleValue displayName="172.17.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.18.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
             </Property>
         </TopologyItem>
         <Property displayName="userName" key="userName" type="String">

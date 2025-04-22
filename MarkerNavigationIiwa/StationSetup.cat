@@ -226,10 +226,7 @@
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="KUKA Option Network Interface" installItem="true" installedVersion="1" itemPath="com.kuka/KONISupport" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/KONISupport/KONISupport" version="0.1.0"/>
                 <Property displayName="IP" key="KONI_IP" optional="true" showInEditor="true" type="String">
-                    <Value>172.1.31.200</Value>
-                </Property>
-                <Property displayName="SubnetMask" key="KONI_SubnetMask" optional="true" showInEditor="true" type="String">
-                    <Value>FFFF0000</Value>
+                    <Value>192.168.0.101</Value>
                 </Property>
             </SoftwareItem>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="KrcDiag" installItem="true" installedVersion="8.5.8.9" itemPath="com.kuka/KrcDiag" selectedVersion="8.5.8.9" usage="Library">
@@ -901,10 +898,17 @@
                 <Value>KUKA_Sunrise_Cabinet_1</Value>
             </Property>
             <Property displayName="IP" key="IP" showInEditor="true" type="String">
-                <Value>172.1.31.100</Value>
+                <Value>192.168.0.100</Value>
             </Property>
             <Property displayName="SubnetMask" key="SubnetMask" showInEditor="true" type="String">
                 <Value>FFFFFF00</Value>
+            </Property>
+            <Property displayName="IP address range for KUKA Line Interface" key="KLI_IP_Range" showInEditor="true" type="String">
+                <Value displayName="192.*.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=172.18.0.2&amp;WinIP=172.18.0.1</Value>
+                <PossibleValue displayName="Other">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
+                <PossibleValue displayName="192.*.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=172.18.0.2&amp;WinIP=172.18.0.1</PossibleValue>
+                <PossibleValue displayName="172.16.*.*">RTIp=172.18.0.1&amp;NonRTIP=172.17.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
+                <PossibleValue displayName="172.17.*.*">RTIp=172.16.0.1&amp;NonRTIP=172.18.0.1&amp;VxWorksIP=192.168.0.2&amp;WinIP=192.168.0.1</PossibleValue>
             </Property>
         </TopologyItem>
         <Property displayName="userName" key="userName" type="String">
