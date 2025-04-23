@@ -135,9 +135,9 @@ class SweepNode(Node):
             # create and publish msg
             msg_out = TwistStamped()
             if self.back_flag:
-                msg_out.twist.angular.x = -0.6
+                msg_out.twist.angular.x = -1
             else:
-                msg_out.twist.angular.x = 0.6
+                msg_out.twist.angular.x = 1
             msg_out.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg_out)
 
