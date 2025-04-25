@@ -60,7 +60,7 @@ class SweepNode(Node):
         os.mkdir(self.img_path)
         os.mkdir(self.img_path + '/input_images')
         os.mkdir(self.img_path + '/output_images')
-        #self.zcf = True # zero cross flag
+        self.zcf = True # zero cross flag
 
         self.get_logger().info('Init done')
 
@@ -119,13 +119,12 @@ class SweepNode(Node):
         params = cv2.SimpleBlobDetector_Params()
 
         # Change thresholds
-        params.minThreshold = 130
+        params.minThreshold = 45
         params.maxThreshold = 255
 
         # Filter by Area
         params.filterByArea = True
-        params.minArea = 5
-        params.maxArea = 100
+        params.maxArea = 120
 
         # Filter by Circularity
         params.filterByCircularity = False
@@ -134,7 +133,8 @@ class SweepNode(Node):
         params.filterByConvexity = False
 
         # Filter by Inertia
-        params.filterByInertia = False
+        params.filterByInertia = True
+        params.minInertiaRatio = 0.01
 
         params.filterByColor = True
         params.blobColor = 255
@@ -144,20 +144,20 @@ class SweepNode(Node):
         detector = cv2.SimpleBlobDetector_create(params)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         #thresh = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,5,2)
-        thresh = cv2.threshold(gray,130,255,cv2.THRESH_BINARY)[1]
+        thresh = cv2.threshold(gray,45,255,cv2.THRESH_BINARY)[1]
         cv2.imshow('orig',thresh)
-        cv2.imwrite(self.img_path + '/output_images/slice_{}.jpg'.format(angle),thresh)
+        
 
         # Detect blobs
         keypoints = detector.detect(image)
 
-        blank = np.zeros(np.shape(image))
+        blank = np.zeros(np.shape(gray))
 
         for keypoint in keypoints:
             x = int(keypoint.pt[0])
             y = int(keypoint.pt[1])
-            blank = cv2.circle(blank,(x,y),3,(0,0,255),-1)
-        
+            blank = cv2.circle(blank,(x,y),3,255,-1)
+        cv2.imwrite(self.img_path + '/output_images/slice_{:.5f}.jpg'.format(angle),blank)
         cv2.imshow('blobs',blank)
         cv2.waitKey(1)
 
@@ -171,7 +171,7 @@ class SweepNode(Node):
         Out :   None
         '''
         # check if posiiton was initialized, if not don't start sweep
-        
+        #self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
         if self.init_pose != None:
             if not self.start_flag:return
             if self.end_flag:
@@ -181,11 +181,21 @@ class SweepNode(Node):
             self.get_logger().info('Slice angle = {}'.format(msg.angle))
             self.get_logger().info('Force applied = {}'.format(math.sqrt(self.wrench.wrench.force.y**2 + self.wrench.wrench.force.z**2)))
 
-            self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
+            trans = self.tf_buffer.lookup_transform('init_pose',self.TCP_frame,rclpy.time.Time())
+
+            # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
+            # KUKA uses zy'x'' notation of euler angles
+            rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+            angle = rot.as_euler('ZYX',degrees=True)[2]
+            if abs(msg.angle) > 0.26 and not self.zcf:
+                self.edge_triger(Trigger.Request(),Trigger.Response())
+                self.zcf = True
+            elif abs(msg.angle) < 0.26 and self.zcf: self.zcf = False
 
             # create and publish msg
             msg_out = TwistStamped()
             if self.back_flag:
+                self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
                 msg_out.twist.angular.x = -1.0
             else:
                 msg_out.twist.angular.x = 1.0

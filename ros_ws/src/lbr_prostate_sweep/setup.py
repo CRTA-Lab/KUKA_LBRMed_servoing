@@ -26,7 +26,8 @@ setup(
             'run_sweep=lbr_prostate_sweep.run_sweep:main',
             'run_sweep_serv=lbr_prostate_sweep.run_sweep_serv:main',
             'run_sweep_serv_wire=lbr_prostate_sweep.run_sweep_serv_wire:main',
-            'needle_aim=lbr_prostate_sweep.needle_aim:main'
+            'needle_aim=lbr_prostate_sweep.needle_aim:main',
+            'needle_aim_wire=lbr_prostate_sweep.needle_aim_wire:main',
         ],
     },
 )
