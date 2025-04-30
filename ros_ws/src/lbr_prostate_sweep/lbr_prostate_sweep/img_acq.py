@@ -33,7 +33,7 @@ class ImageAquisition(Node):
         self.create_timer(1/23,self.get_image)
 
         # connecting to the US
-        self.cap = cv2.VideoCapture(1)
+        self.cap = cv2.VideoCapture(0)
         
         return
 
@@ -76,6 +76,7 @@ class ImageAquisition(Node):
             # KUKA uses zy'x'' notation of euler angles
             rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
             angle = rot.as_euler('ZYX',degrees=False)[2]
+            angle = trans.transform.translation.x
         except Exception as e:
             self.get_logger().warning('dogodila se graska : {}'.format(e))
             try:

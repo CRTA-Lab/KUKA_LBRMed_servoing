@@ -56,10 +56,10 @@ class SweepNode(Node):
         self.changed_dir = False
         self.capture_flag = True
         
-        self.img_path = '/home/racunalo1/KUKA_LBRMed_servoing/US_pics/sweep_P1_{}_{}'.format(time.localtime().tm_hour,time.localtime().tm_min)
+        self.img_path = '/home/matija/KUKA_LBRMed_servoing/US_pics/sweep_P1_{}_{}'.format(time.localtime().tm_hour,time.localtime().tm_min)
         os.mkdir(self.img_path)
         os.mkdir(self.img_path + '/input_images')
-        os.mkdir(self.img_path + '/output_images')
+        #os.mkdir(self.img_path + '/output_images')
         self.zcf = True # zero cross flag
 
         self.get_logger().info('Init done')
@@ -80,10 +80,11 @@ class SweepNode(Node):
         '''Callback for the service when end of the prostate is detected'''
         self.back_flag = True
         self.get_logger().info('Changed directon')
-        if self.changed_dir:
-            self.end_flag = True
-        else:
-            self.changed_dir = True
+        self.end_flag = True
+        # if self.changed_dir:
+        #     self.end_flag = True
+        # else:
+        #     self.changed_dir = True
         return response
 
     def initialize_pose(self):
@@ -111,55 +112,55 @@ class SweepNode(Node):
         Out : None
         '''
         # Set up the detector with default parameters.
-        if not self.capture_flag:
-            self.capture_flag = True
-            return
-        self.capture_flag = False
-        cv2.imwrite(self.img_path + '/input_images/original_{}.jpg'.format(angle),image)
-        params = cv2.SimpleBlobDetector_Params()
+        # if not self.capture_flag:
+        #     self.capture_flag = True
+        #     return
+        # self.capture_flag = False
+        cv2.imwrite(self.img_path + '/input_images/original_{:.7f}.jpg'.format(angle),image)
+        # params = cv2.SimpleBlobDetector_Params()
 
-        # Change thresholds
-        params.minThreshold = 45
-        params.maxThreshold = 255
+        # # Change thresholds
+        # params.minThreshold = 45
+        # params.maxThreshold = 255
 
-        # Filter by Area
-        params.filterByArea = True
-        params.maxArea = 120
+        # # Filter by Area
+        # params.filterByArea = True
+        # params.maxArea = 120
 
-        # Filter by Circularity
-        params.filterByCircularity = False
+        # # Filter by Circularity
+        # params.filterByCircularity = False
 
-        # Filter by Convexity
-        params.filterByConvexity = False
+        # # Filter by Convexity
+        # params.filterByConvexity = False
 
-        # Filter by Inertia
-        params.filterByInertia = True
-        params.minInertiaRatio = 0.01
+        # # Filter by Inertia
+        # params.filterByInertia = True
+        # params.minInertiaRatio = 0.01
 
-        params.filterByColor = True
-        params.blobColor = 255
+        # params.filterByColor = True
+        # params.blobColor = 255
 
         
-        # Create a detector with the parameters
-        detector = cv2.SimpleBlobDetector_create(params)
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        #thresh = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,5,2)
-        thresh = cv2.threshold(gray,45,255,cv2.THRESH_BINARY)[1]
-        cv2.imshow('orig',thresh)
+        # # Create a detector with the parameters
+        # detector = cv2.SimpleBlobDetector_create(params)
+        # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # #thresh = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,5,2)
+        # thresh = cv2.threshold(gray,45,255,cv2.THRESH_BINARY)[1]
+        # cv2.imshow('orig',thresh)
         
 
-        # Detect blobs
-        keypoints = detector.detect(image)
+        # # Detect blobs
+        # keypoints = detector.detect(image)
 
-        blank = np.zeros(np.shape(gray))
+        # blank = np.zeros(np.shape(gray))
 
-        for keypoint in keypoints:
-            x = int(keypoint.pt[0])
-            y = int(keypoint.pt[1])
-            blank = cv2.circle(blank,(x,y),3,255,-1)
-        cv2.imwrite(self.img_path + '/output_images/slice_{:.5f}.jpg'.format(angle),blank)
-        cv2.imshow('blobs',blank)
-        cv2.waitKey(1)
+        # for keypoint in keypoints:
+        #     x = int(keypoint.pt[0])
+        #     y = int(keypoint.pt[1])
+        #     blank = cv2.circle(blank,(x,y),3,255,-1)
+        # cv2.imwrite(self.img_path + '/output_images/slice_{:.5f}.jpg'.format(angle),blank)
+        # cv2.imshow('blobs',blank)
+        # cv2.waitKey(1)
 
 
 
@@ -187,18 +188,20 @@ class SweepNode(Node):
             # KUKA uses zy'x'' notation of euler angles
             rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
             angle = rot.as_euler('ZYX',degrees=True)[2]
-            if abs(msg.angle) > 0.26 and not self.zcf:
+            if abs(msg.angle) > 0.06 and not self.zcf:
                 self.edge_triger(Trigger.Request(),Trigger.Response())
                 self.zcf = True
             elif abs(msg.angle) < 0.26 and self.zcf: self.zcf = False
 
             # create and publish msg
             msg_out = TwistStamped()
-            if self.back_flag:
-                self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
-                msg_out.twist.angular.x = -1.0
-            else:
-                msg_out.twist.angular.x = 1.0
+            self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
+            msg_out.twist.linear.x = -0.15
+            # if self.back_flag:
+            #     self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
+            #     msg_out.twist.linear.x = 0.1
+            # else:
+            #     msg_out.twist.angular.x = 1.0
             msg_out.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg_out)
 
