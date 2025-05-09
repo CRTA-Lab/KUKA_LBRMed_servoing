@@ -2,21 +2,20 @@ import cv2
 import numpy as np
 
 # Load image in grayscale
-image = cv2.imread('C:\Files\Polaris_integration\data\image_006.png')
+image = cv2.imread('/home/matija/Downloads/target_3 1.jpg')
+cv2.imshow('orig',image)
 
 
 
-# Set up the detector with default parameters.
 params = cv2.SimpleBlobDetector_Params()
 
 # Change thresholds
-params.minThreshold = 180
+params.minThreshold = 45
 params.maxThreshold = 255
 
 # Filter by Area
 params.filterByArea = True
-params.minArea = 10
-params.maxArea = 500
+params.maxArea = 120
 
 # Filter by Circularity
 params.filterByCircularity = False
@@ -25,7 +24,8 @@ params.filterByCircularity = False
 params.filterByConvexity = False
 
 # Filter by Inertia
-params.filterByInertia = False
+params.filterByInertia = True
+params.minInertiaRatio = 0.01
 
 params.filterByColor = True
 params.blobColor = 255
@@ -33,23 +33,21 @@ params.blobColor = 255
 
 # Create a detector with the parameters
 detector = cv2.SimpleBlobDetector_create(params)
-# _,thresh = cv2.threshold(image,180,255,cv2.THRESH_BINARY)
-# cv2.imshow('orig',thresh)
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+#thresh = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,5,2)
+thresh = cv2.threshold(gray,45,255,cv2.THRESH_BINARY)[1]
+cv2.imshow('tresh',thresh)
+
+
 # Detect blobs
 keypoints = detector.detect(image)
 
-# Draw blobs on the image
-blank = np.zeros((1, 1))
+blank = np.zeros(np.shape(gray))
+
 for keypoint in keypoints:
     x = int(keypoint.pt[0])
     y = int(keypoint.pt[1])
-    image = cv2.circle(image,(x,y),3,(0,0,255),-1)
-
-# print(keypoints)
-# blobs = cv2.drawKeypoints(image, keypoints, blank, (0, 0, 255),
-#                           cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-# Show keypoints
-cv2.imshow("Blobs", image)
+    blank = cv2.circle(blank,(x,y),3,255,-1)
+#cv2.imwrite(self.img_path + '/output_images/slice_{:.5f}.jpg'.format(angle),blank)
+cv2.imshow('blobs',blank)
 cv2.waitKey(0)
-cv2.destroyAllWindows()

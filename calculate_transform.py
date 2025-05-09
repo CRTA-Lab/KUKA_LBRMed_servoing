@@ -58,8 +58,8 @@ def intersection(p1,p2,N,p0,ro):
     return intersection_local
 
 def find_blobs():
-    image = cv2.imread('/home/matija/Downloads/target_3 1.jpg')
-    #cv2.imshow('orig',image)
+    image = cv2.imread('/home/matija/KUKA_LBRMed_servoing/US_pics/targets/target_3.jpg')
+    cv2.imshow('orig',image)
 
 
 
@@ -92,7 +92,7 @@ def find_blobs():
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     #thresh = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,5,2)
     thresh = cv2.threshold(gray,45,255,cv2.THRESH_BINARY)[1]
-    #cv2.imshow('tresh',thresh)
+    cv2.imshow('tresh',thresh)
 
 
     # Detect blobs
@@ -108,8 +108,8 @@ def find_blobs():
         blobs.append((x,y))
         blank = cv2.circle(blank,(x,y),3,255,-1)
     #cv2.imwrite(self.img_path + '/output_images/slice_{:.5f}.jpg'.format(angle),blank)
-    #cv2.imshow('blobs',blank)
-    #cv2.waitKey(0)
+    cv2.imshow('blobs',blank)
+    cv2.waitKey(0)
     blobs.sort(key=lambda x: x[0]*100+x[1])
     return blobs
 
