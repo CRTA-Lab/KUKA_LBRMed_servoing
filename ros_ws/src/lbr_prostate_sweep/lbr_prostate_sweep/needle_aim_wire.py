@@ -41,7 +41,8 @@ class AimNode(Node):
         self.create_timer(1/100, self.aim)
 
         # initializeing the variables
-        self.base_frame = 'init_pose'
+        self.sweep_frame = 'init_pose'
+        self.base_frame = 'wire_frame'
         self.TCP_frame = 'lbr_link_ee'
         self.targets = []
         self.target_no = 0
@@ -83,7 +84,7 @@ class AimNode(Node):
     
     def save_img(self):
         if not self.img_save_flag:
-            cv2.imwrite('/home/racunalo1/KUKA_LBRMed_servoing/US_pics/targets/target_{}.jpg'.format(self.target_no+1),self.last_img)
+            cv2.imwrite('/home/matija/KUKA_LBRMed_servoing/US_pics/targets/target_{}.jpg'.format(self.target_no+1),self.last_img)
             self.img_save_flag = True
         return
     
@@ -113,7 +114,8 @@ class AimNode(Node):
             msg.twist.angular.x = ctrl
             msg.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg)
-        else: 
+        else:
+            trans = self.tf_buffer.lookup_transform(self.sweep_frame,self.TCP_frame,rclpy.time.Time())
             dist = math.sqrt((trans.transform.translation.y**2 + trans.transform.translation.z**2))*1000
             
             if not self.position_flag:

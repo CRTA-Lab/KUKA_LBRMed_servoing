@@ -33,7 +33,7 @@ class ImageAquisition(Node):
         self.create_timer(1/23,self.get_image)
 
         # connecting to the US
-        self.cap = cv2.VideoCapture(1)
+        self.cap = cv2.VideoCapture(0)
         
         return
 
@@ -47,7 +47,7 @@ class ImageAquisition(Node):
 
         base_frame = 'lbr_link_0'
         TCP_frame = 'lbr_link_ee'
-        sweep_frame = 'init_pose'
+        sweep_frame = 'wire_frame'
 
         # reading the image
         ret,frame = self.cap.read()

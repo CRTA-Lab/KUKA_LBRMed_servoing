@@ -4,7 +4,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
 from rclpy.callback_groups import ReentrantCallbackGroup
 from tf2_ros.buffer import Buffer
-from tf2_ros import TransformListener, TransformBroadcaster
+from tf2_ros import TransformListener, TransformBroadcaster, TransformStamped
 from custom_interfaces.msg import ImageMeta
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import TwistStamped, WrenchStamped
@@ -17,6 +17,12 @@ import time
 import math
 import os
 
+
+def angle_conversion(euler):
+    r = Rotation.from_euler('ZYX',euler,degrees=False)
+    rot_angles = r.as_quat()
+    print(rot_angles)
+    return rot_angles
 
 class SweepNode(Node):
     '''Node for performing the sweep with the robot'''
@@ -56,7 +62,7 @@ class SweepNode(Node):
         self.changed_dir = False
         self.capture_flag = True
         
-        self.img_path = '/home/racunalo1/KUKA_LBRMed_servoing/US_pics/sweep_P1_{}_{}'.format(time.localtime().tm_hour,time.localtime().tm_min)
+        self.img_path = '/home/matija/KUKA_LBRMed_servoing/US_pics/sweep_P1_{}_{}'.format(time.localtime().tm_hour,time.localtime().tm_min)
         os.mkdir(self.img_path)
         os.mkdir(self.img_path + '/input_images')
         os.mkdir(self.img_path + '/output_images')
@@ -97,11 +103,26 @@ class SweepNode(Node):
         return
 
 
+
     def broadcast_init_pose(self):
         if self.init_pose != None:
-            pose = self.init_pose
+            pose = TransformStamped()
             pose.header.stamp = self.get_clock().now().to_msg()
+            pose.header.frame_id = 'lbr_link_0'
+            pose.child_frame_id = 'wire_frame'
+            frame = [-98.62559282193313,615.1206813787721,47.51781043249981,2.0754577587861913,-1.532716090910091,2.4678813223754448]
+            pose.transform.translation.x = frame[0]/1000
+            pose.transform.translation.y = frame[1]/1000
+            pose.transform.translation.z = frame[2]/1000
+            angle_quat = angle_conversion(frame[3:6])
+            pose.transform.rotation.x = angle_quat[0]
+            pose.transform.rotation.y = angle_quat[1]
+            pose.transform.rotation.z = angle_quat[2]
+            pose.transform.rotation.w = angle_quat[3]
             self.tf_broadcaster.sendTransform(pose)
+            initial_pose = self.init_pose
+            initial_pose.header.stamp = self.get_clock().now().to_msg()
+            self.tf_broadcaster.sendTransform(initial_pose)
         return
     
     def find_blobs(self,image,angle):
@@ -181,7 +202,7 @@ class SweepNode(Node):
             self.get_logger().info('Slice angle = {}'.format(msg.angle))
             self.get_logger().info('Force applied = {}'.format(math.sqrt(self.wrench.wrench.force.y**2 + self.wrench.wrench.force.z**2)))
 
-            trans = self.tf_buffer.lookup_transform('init_pose',self.TCP_frame,rclpy.time.Time())
+            trans = self.tf_buffer.lookup_transform('wire_frame',self.TCP_frame,rclpy.time.Time())
 
             # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
             # KUKA uses zy'x'' notation of euler angles
