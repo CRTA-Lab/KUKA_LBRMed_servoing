@@ -33,7 +33,7 @@ global lines
 lines = []
 
 for (p1,p2) in points:
-    lines.append((np.array([p1[0]*5.5,p1[1]*8,0]),np.array([p2[0]*5.5,p2[1]*8,57])))
+    lines.append((np.array([p1[0]*5.5,p1[1]*8,0]),np.array([p2[0]*5.5,p2[1]*8,0])))
 
 
 def noramlize(V):
@@ -58,8 +58,8 @@ def intersection(p1,p2,N,p0,ro):
     return intersection_local
 
 def find_blobs():
-    image = cv2.imread('/home/matija/KUKA_LBRMed_servoing/US_pics/targets/target_3.jpg')
-    cv2.imshow('orig',image)
+    image = cv2.imread('/home/matija/KUKA_LBRMed_servoing/US_pics/targets/target_1_-0.1098.jpg')
+    #cv2.imshow('orig',image)
 
 
 
@@ -92,7 +92,7 @@ def find_blobs():
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     #thresh = cv2.adaptiveThreshold(image,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,5,2)
     thresh = cv2.threshold(gray,45,255,cv2.THRESH_BINARY)[1]
-    cv2.imshow('tresh',thresh)
+    #cv2.imshow('tresh',thresh)
 
 
     # Detect blobs
@@ -103,14 +103,17 @@ def find_blobs():
     blobs = []
 
     for keypoint in keypoints:
-        x = int(keypoint.pt[0])
-        y = int(keypoint.pt[1])
+        x = int(keypoint.pt[1])
+        y = int(keypoint.pt[0])
         blobs.append((x,y))
         blank = cv2.circle(blank,(x,y),3,255,-1)
     #cv2.imwrite(self.img_path + '/output_images/slice_{:.5f}.jpg'.format(angle),blank)
-    cv2.imshow('blobs',blank)
-    cv2.waitKey(0)
-    blobs.sort(key=lambda x: x[0]*100+x[1])
+    #cv2.imshow('blobs',blank)
+    #cv2.waitKey(0)
+    blobs.sort(key=lambda x: x[0])
+    for i in range(0,len(blobs),3):
+        blobs[i:i+3] = sorted(blobs[i:i+3],key=lambda x: x[1])
+    print(blobs)
     return blobs
 
 def calculate_transform(x):
@@ -123,13 +126,18 @@ def calculate_transform(x):
     for i in range(len(lines)):
         point = intersection(lines[i][0],lines[i][1],N,p0,fi)
         diffs.append(np.sqrt((point[0]-blobs[i][0])**2+(point[1]-blobs[i][1])**2))
+        # if np.linalg.norm(N) < 1:
+        #     diffs.append(np.sqrt((point[0]-blobs[i][0])**2+(point[1]-blobs[i][1])**2)/np.linalg.norm(N))
+        # else:
+        #     diffs.append(np.sqrt((point[0]-blobs[i][0])**2+(point[1]-blobs[i][1])**2)*np.linalg.norm(N))
     if np.linalg.norm(N) < 1:
         return np.sum(diffs)/np.linalg.norm(N)
     else:
         return np.sum(diffs)*np.linalg.norm(N)
+    #return diffs
 
 
-result = least_squares(calculate_transform, x0=[0,0,1,25,30,28,0],bounds=([-0.2,-1,-1,-100,-100,-100,-np.pi],[0.2,1,1,100,100,100,np.pi]),loss='cauchy',jac='3-point')
+result = least_squares(calculate_transform, x0=[0,0,1,-5,-5,-28,0],bounds=([-0.2,-1,-1,-100,-100,-100,-np.pi],[0.2,1,1,100,100,100,np.pi]),loss='cauchy',jac='3-point')
 print(result.x)
 N = np.array(result.x[0:3])
 print(np.arccos((np.dot(np.array([0,0,1]),N))/(np.linalg.norm(N))))
