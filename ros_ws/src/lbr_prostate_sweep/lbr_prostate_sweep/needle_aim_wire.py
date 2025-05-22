@@ -16,7 +16,7 @@ import time
 import cv2
 from cv_bridge import CvBridge
 class AimNode(Node):
-    '''Node for performing the wtargeting with the robot'''
+    '''Node for performing the targeting with the robot'''
     def __init__(self):
         super().__init__('AimNode')
 
@@ -82,10 +82,11 @@ class AimNode(Node):
             self.destroy_node()
         return response
     
-    def save_img(self):
+    def save_img(self,angle):
         if not self.img_save_flag:
-            cv2.imwrite('/home/matija/KUKA_LBRMed_servoing/US_pics/targets/target_{}.jpg'.format(self.target_no+1),self.last_img)
+            cv2.imwrite('/home/matija/KUKA_LBRMed_servoing/US_pics/targets/target_{}_{:.4f}.jpg'.format(self.target_no+1,angle),self.last_img)
             self.img_save_flag = True
+            self.get_logger().info('Saved image for target {} at angle {}'.format(self.target_no+1,angle))
         return
     
     
@@ -102,7 +103,8 @@ class AimNode(Node):
         #self.get_logger().info('Current angle: {}\tTarget angle: {}\tDelta: {}'.format(angle,self.targets[self.target_no][2],delta))
         if abs(delta) < 0.001:
             self.angle_flag = True
-            self.save_img()
+            self.save_img(self.targets[self.target_no][2])
+
 
         if not self.angle_flag:
             msg = TwistStamped()
