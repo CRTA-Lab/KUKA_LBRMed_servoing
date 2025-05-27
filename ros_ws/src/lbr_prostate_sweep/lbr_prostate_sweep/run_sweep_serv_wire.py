@@ -110,7 +110,7 @@ class SweepNode(Node):
             pose.header.stamp = self.get_clock().now().to_msg()
             pose.header.frame_id = 'lbr_link_0'
             pose.child_frame_id = 'wire_frame'
-            frame = [-98.62559282193313,615.1206813787721,47.51781043249981,2.0754577587861913,-1.532716090910091,2.4678813223754448]
+            frame = [-145.50077954139533,568.2853686889795,52.285025705531794,2.884708005342498,-1.4666497801528262,1.9221750474886683]
             pose.transform.translation.x = frame[0]/1000
             pose.transform.translation.y = frame[1]/1000
             pose.transform.translation.z = frame[2]/1000
