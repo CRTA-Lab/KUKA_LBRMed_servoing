@@ -88,6 +88,7 @@ class AimNode(Node):
                                            probe_pose.transform.translation.y*1000,
                                            probe_pose.transform.translation.z*1000])
         self.get_logger().info('Probe pose: {}'.format(self.probe_pose))
+        self.targets_log.writelines('Probe pose: {}\n'.format(self.probe_pose))
         self.start_flag = True
         self.get_logger().info('Rupa br : {}\tDubina : {} mm'.format(self.targets[self.target_no][1]//5+1,(60-self.targets[self.target_no][0])+82))
         return response
@@ -132,7 +133,7 @@ class AimNode(Node):
         '''
         SETTINGS = {
             "tracker type": "vega",
-            "ip address": "192.168.0.110",
+            "ip address": "192.168.0.120",
             "romfiles" : ["/home/matija/KUKA_LBRMed_servoing/markeri/8700339_wire_phantom.rom",
                         "/home/matija/KUKA_LBRMed_servoing/markeri/FEM0001_biopsy_needle.rom"],
             

@@ -42,6 +42,22 @@ def generate_launch_description():
         launch_arguments={'model': LaunchConfiguration('model'), 'ctrl':'forward_position_controller'}.items(),
     )
 
+    move_grup = IncludeLaunchDescription(
+      PythonLaunchDescriptionSource([os.path.join(
+         get_package_share_directory('iiwa14_tool_moveit_config'), 'launch'),
+         '/move_group.launch.py']))
+    
+    rsp = IncludeLaunchDescription(
+      PythonLaunchDescriptionSource([os.path.join(
+         get_package_share_directory('iiwa14_tool_moveit_config'), 'launch'),
+            '/rsp.launch.py']),)
+
+    moveit_rviz = IncludeLaunchDescription(
+      PythonLaunchDescriptionSource([os.path.join(
+         get_package_share_directory('iiwa14_tool_moveit_config'), 'launch'),
+         '/moveit_rviz.launch.py']))
+    
+
     moveit_servo = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('lbr_bringup'), 'launch'),
@@ -93,5 +109,8 @@ def generate_launch_description():
     ld.add_action(aiming)
     ld.add_action(robot_description)
     ld.add_action(moveit_servo)
+    ld.add_action(rsp)
+    ld.add_action(move_grup)
+    ld.add_action(moveit_rviz)
 
     return ld
