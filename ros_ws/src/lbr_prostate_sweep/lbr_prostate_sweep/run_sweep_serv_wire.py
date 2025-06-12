@@ -7,8 +7,13 @@ from tf2_ros.buffer import Buffer
 from tf2_ros import TransformListener, TransformBroadcaster, TransformStamped
 from custom_interfaces.msg import ImageMeta
 from sensor_msgs.msg import Image
-from geometry_msgs.msg import TwistStamped, WrenchStamped
+from geometry_msgs.msg import TwistStamped, WrenchStamped, PoseStamped
 from std_srvs.srv import Trigger
+#from moveit.core import RobotModel
+from moveit.core.planning_scene import PlanningScene
+from moveit.planning import MoveItPy, PlanningComponent, PlanRequestParameters, PlanningSceneMonitor
+from moveit_configs_utils import MoveItConfigsBuilder
+from ament_index_python import get_package_share_directory
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
@@ -55,6 +60,7 @@ class SweepNode(Node):
         self.wrench = WrenchStamped()
         self.base_frame = 'lbr_link_0'
         self.TCP_frame = 'lbr_link_ee'
+        self.phantom_frame = 'wire_frame'
         self.start_flag = False
         self.end_flag = False
         self.init_pose = None
@@ -68,6 +74,9 @@ class SweepNode(Node):
         os.mkdir(self.img_path + '/output_images')
         self.zcf = True # zero cross flag
 
+        #time.sleep(5)
+
+        
         self.get_logger().info('Init done')
 
     def ft_callback(self,msg:WrenchStamped):
@@ -97,6 +106,54 @@ class SweepNode(Node):
         Args : self
         Out: None
         '''
+
+        time.sleep(1)
+
+
+        # planing_scene = PlanningSceneMonitor(self,'robot_description','psm')
+        # planing_scene.start_scene_monitor()
+        # planing_scene.start_world_geometry_monitor()
+
+        # self.lbr_arm = PlanningComponent('arm',planning_scene_monitor=planing_scene)
+
+        moveit_config_builder = MoveItConfigsBuilder('iiwa14_tool')
+        moveit_config_builder.moveit_cpp(file_path=get_package_share_directory("iiwa14_tool_moveit_config") + "/config/planing_pipeline_config.yaml")
+        moveit_config_builder.robot_description(os.path.join(get_package_share_directory('lbr_description'),'urdf/iiwa14_tool/iiwa14_tool.xacro'))
+        moveit_config_dict = moveit_config_builder.to_moveit_configs().to_dict()
+
+        self.lbr : MoveItPy = MoveItPy(node_name='moveit_py',config_dict = moveit_config_dict)
+        psm : PlanningSceneMonitor = self.lbr.get_planning_scene_monitor()
+        psm.start_scene_monitor('monitored_planning_scene')
+        self.lbr_arm : PlanningComponent = self.lbr.get_planning_component('arm')
+        self.get_logger().info('MoveItPy initialized')
+
+        planning_scene = PlanningScene(self.lbr.get_robot_model())
+
+        self.lbr_arm.set_start_state_to_current_state()
+        goal = self.tf_buffer.lookup_transform(self.base_frame,'target',rclpy.time.Time())
+        goal_pose = PoseStamped()
+        goal_pose.header.stamp = self.get_clock().now().to_msg()
+        goal_pose.header.frame_id = self.base_frame
+        goal_pose.pose.position.x = goal.transform.translation.x
+        goal_pose.pose.position.y = goal.transform.translation.y
+        goal_pose.pose.position.z = goal.transform.translation.z
+        goal_pose.pose.orientation.x = goal.transform.rotation.x
+        goal_pose.pose.orientation.y = goal.transform.rotation.y
+        goal_pose.pose.orientation.z = goal.transform.rotation.z
+        goal_pose.pose.orientation.w = goal.transform.rotation.w
+
+
+        self.lbr_arm.set_goal_state(pose_stamped_msg = goal_pose,pose_link = self.TCP_frame)
+        self.get_logger().info('Type : {}'.format(type(psm)))
+        try:
+            plan = self.lbr_arm.plan(PlanRequestParameters(self.lbr,''))
+            time.sleep(5)
+            future = self.lbr.execute(plan.trajectory,[])
+        except Exception as e:
+            self.get_logger().error('Error while planning : {}'.format(e))
+            self.get_logger().info('Type : {}'.format(type(self.lbr_arm)))
+            
+        rclpy.spin_until_future_complete(self,future)
         self.init_pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
         self.init_pose.child_frame_id = 'init_pose'
         #self.init_pose.header.frame_id = 'lbr_link_0'
@@ -105,21 +162,36 @@ class SweepNode(Node):
 
 
     def broadcast_init_pose(self):
+        pose = TransformStamped()
+        pose.header.stamp = self.get_clock().now().to_msg()
+        pose.header.frame_id = 'lbr_link_0'
+        pose.child_frame_id = self.phantom_frame
+        frame = [-193.62930448646964,555.7281724246884,76.66164793994926,2.8991537198756734,-1.4721502430548297,1.8866531711544678]
+        pose.transform.translation.x = frame[0]/1000
+        pose.transform.translation.y = frame[1]/1000
+        pose.transform.translation.z = frame[2]/1000
+        angle_quat = angle_conversion(frame[3:6])
+        angle_quat = angle_conversion(frame[3:6])
+        pose.transform.rotation.x = angle_quat[0]
+        pose.transform.rotation.y = angle_quat[1]
+        pose.transform.rotation.z = angle_quat[2]
+        pose.transform.rotation.w = angle_quat[3]
+        self.tf_broadcaster.sendTransform(pose)
+
+        pose = TransformStamped()
+        pose.header.stamp = self.get_clock().now().to_msg()
+        pose.header.frame_id = self.phantom_frame
+        pose.child_frame_id = 'target'
+        pose.transform.translation.x = 0.05
+        pose.transform.translation.y = -0.05
+        pose.transform.translation.z = -0.05
+        pose.transform.rotation.x = -1.0
+        pose.transform.rotation.y = 0.0
+        pose.transform.rotation.z = 0.0
+        pose.transform.rotation.w = 0.0
+        self.tf_broadcaster.sendTransform(pose)
+
         if self.init_pose != None:
-            pose = TransformStamped()
-            pose.header.stamp = self.get_clock().now().to_msg()
-            pose.header.frame_id = 'lbr_link_0'
-            pose.child_frame_id = 'wire_frame'
-            frame = [-145.50077954139533,568.2853686889795,52.285025705531794,2.884708005342498,-1.4666497801528262,1.9221750474886683]
-            pose.transform.translation.x = frame[0]/1000
-            pose.transform.translation.y = frame[1]/1000
-            pose.transform.translation.z = frame[2]/1000
-            angle_quat = angle_conversion(frame[3:6])
-            pose.transform.rotation.x = angle_quat[0]
-            pose.transform.rotation.y = angle_quat[1]
-            pose.transform.rotation.z = angle_quat[2]
-            pose.transform.rotation.w = angle_quat[3]
-            self.tf_broadcaster.sendTransform(pose)
             initial_pose = self.init_pose
             initial_pose.header.stamp = self.get_clock().now().to_msg()
             self.tf_broadcaster.sendTransform(initial_pose)

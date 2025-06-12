@@ -7,6 +7,7 @@ from rclpy.qos import qos_profile_system_default
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener 
 from geometry_msgs.msg import Vector3Stamped
+from sensor_msgs.msg import JointState
 from custom_interfaces.msg import ImageMeta
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
@@ -29,6 +30,9 @@ class ImageAquisition(Node):
         # start publisher for US image
         self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default)
 
+        # self.create_subscription(JointState, '/lbr/joint_states', self.joint_state_callback, qos_profile_system_default)
+        # self.joint_state_pub = self.create_publisher(JointState, '/joint_states', qos_profile_system_default)
+
         # timer for periodicaly captureing the image from US
         self.create_timer(1/23,self.get_image)
 
@@ -36,8 +40,15 @@ class ImageAquisition(Node):
         self.cap = cv2.VideoCapture(0)
         
         return
-
-        
+ 
+    def joint_state_callback(self, msg: JointState):
+        '''Callback function for the joint state subscriber
+        Args : self, msg - JointState message
+        Returns: None
+        '''
+        # publishing the joint states to the topic
+        self.joint_state_pub.publish(msg)
+        return
 
     def get_image(self):
         '''Callback function for the image capture timer
@@ -56,7 +67,7 @@ class ImageAquisition(Node):
 
         # if image could not be red skip
         if not ret:
-            self.get_logger().warn('No picture')
+            #self.get_logger().warn('No picture')
             return
         
 
@@ -77,7 +88,7 @@ class ImageAquisition(Node):
             rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
             angle = rot.as_euler('ZYX',degrees=False)[2]
         except Exception as e:
-            self.get_logger().warning('dogodila se graska : {}'.format(e))
+            #self.get_logger().warning('dogodila se graska : {}'.format(e))
             try:
                 trans = self.tf_buffer.lookup_transform(base_frame,TCP_frame,rclpy.time.Time())
 

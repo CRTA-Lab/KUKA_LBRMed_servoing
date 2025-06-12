@@ -1,6 +1,7 @@
 from launch_ros.actions import Node, PushRosNamespace
 
 from ament_index_python.packages import get_package_share_directory
+from moveit_configs_utils import MoveItConfigsBuilder
 
 from launch import LaunchDescription, Event
 from launch.actions import DeclareLaunchArgument, GroupAction, IncludeLaunchDescription
@@ -39,30 +40,41 @@ def generate_launch_description():
     PythonLaunchDescriptionSource([os.path.join(
         get_package_share_directory('lbr_bringup'), 'launch'),
         '/hardware.launch.py']),
-        launch_arguments={'model': LaunchConfiguration('model'), 'ctrl':'forward_position_controller'}.items(),
+        launch_arguments={'model': LaunchConfiguration('model'), 'ctrl':'joint_trajectory_controller','namespace': LaunchConfiguration('namespace')}.items(),
     )
+
 
     move_grup = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('iiwa14_tool_moveit_config'), 'launch'),
-         '/move_group.launch.py']))
+         '/move_group.launch.py']),
+         launch_arguments={'robot_name': 'lbr','namespace': 'lbr','model': LaunchConfiguration('model'), 'mode':LaunchConfiguration('mode')}.items(),
+         )
     
     rsp = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('iiwa14_tool_moveit_config'), 'launch'),
-            '/rsp.launch.py']),)
+        '/rsp.launch.py']),
+        launch_arguments={'namespace': 'lbr','model': LaunchConfiguration('model'), 'mode':LaunchConfiguration('mode')}.items(),
+        )
 
     moveit_rviz = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('iiwa14_tool_moveit_config'), 'launch'),
-         '/moveit_rviz.launch.py']))
+         '/moveit_rviz.launch.py']),
+         launch_arguments={'namespace': 'lbr'}.items())
     
+    spawn_controllers = IncludeLaunchDescription(
+      PythonLaunchDescriptionSource([os.path.join(
+         get_package_share_directory('iiwa14_tool_moveit_config'), 'launch'),
+         '/spawn_controllers.launch.py']),
+         )
 
     moveit_servo = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('lbr_bringup'), 'launch'),
          '/moveit_servo.launch.py']),
-         launch_arguments={'model': LaunchConfiguration('model'), 'mode':LaunchConfiguration('mode')}.items(), 
+         launch_arguments={'model': LaunchConfiguration('model'), 'mode':LaunchConfiguration('mode')}.items() 
 
     )
 
@@ -100,6 +112,17 @@ def generate_launch_description():
 
     ])
 
+    helper = GroupAction([    
+    PushRosNamespace(namespace),
+
+    Node(
+        package='lbr_prostate_sweep',
+        executable='helper_node',
+        output='log',
+    )
+
+    ])
+
     ld = LaunchDescription([
             namespace_launch_arg,
             model,mode
@@ -107,10 +130,12 @@ def generate_launch_description():
     ld.add_action(image_acq)
     ld.add_action(servoing)
     ld.add_action(aiming)
+    ld.add_action(helper)
     ld.add_action(robot_description)
-    ld.add_action(moveit_servo)
+    #ld.add_action(moveit_servo)
     ld.add_action(rsp)
     ld.add_action(move_grup)
+    #ld.add_action(spawn_controllers)
     ld.add_action(moveit_rviz)
 
     return ld

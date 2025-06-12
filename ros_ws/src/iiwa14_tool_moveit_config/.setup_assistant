@@ -7,7 +7,7 @@ moveit_setup_assistant_config:
   package_settings:
     author_name: matija
     author_email: matija.markulin@fsb.unizg.hr
-    generated_timestamp: 1739521643
+    generated_timestamp: 1749451428
   control_xacro:
     command:
       - position
