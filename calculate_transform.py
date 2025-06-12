@@ -37,7 +37,7 @@ global lines
 lines = []
 # transform points from hole coordinates to milmeters
 for (p1,p2) in points:
-    lines.append((np.array([p1[0]*5.5,p1[1]*8,0]),np.array([p2[0]*5.5,p2[1]*8,-57])))
+    lines.append((np.array([-p1[0]*5.5,p1[1]*8,0]),np.array([-p2[0]*5.5,p2[1]*8,-57])))
 
 def noramlize(V):
     ''' Function for normalizing a vector
@@ -132,10 +132,17 @@ sigma = 0.5
 def calculate_transform(x):
     N, p0, fi = np.array(x[:3]), np.array(x[3:6]), x[6]
     residuals = []
+    N_norm = np.linalg.norm(N)
     for (p1, p2), (bx, by) in zip(lines, blobs):
         px, py, _ = intersection(p1, p2, N, p0, fi)
-        residuals.append((px - bx) / sigma)
-        residuals.append((py - by) / sigma)
+        residuals.append(((px - bx))/ sigma)
+        residuals.append(((py - by)) / sigma)
+        # if N_norm > 1:
+        #     residuals.append(((px - bx) / N_norm)/ sigma)
+        #     residuals.append(((py - by) / N_norm) / sigma)
+        # else:
+        #     residuals.append(((px - bx) * N_norm)/ sigma)
+        #     residuals.append(((py - by) * N_norm) / sigma)
 
     return residuals
 
