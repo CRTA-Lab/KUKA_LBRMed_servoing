@@ -107,7 +107,7 @@ class SweepNode(Node):
         Out: None
         '''
 
-        time.sleep(1)
+        #time.sleep(1)
 
 
         # planing_scene = PlanningSceneMonitor(self,'robot_description','psm')
@@ -116,44 +116,44 @@ class SweepNode(Node):
 
         # self.lbr_arm = PlanningComponent('arm',planning_scene_monitor=planing_scene)
 
-        moveit_config_builder = MoveItConfigsBuilder('iiwa14_tool')
-        moveit_config_builder.moveit_cpp(file_path=get_package_share_directory("iiwa14_tool_moveit_config") + "/config/planing_pipeline_config.yaml")
-        moveit_config_builder.robot_description(os.path.join(get_package_share_directory('lbr_description'),'urdf/iiwa14_tool/iiwa14_tool.xacro'))
-        moveit_config_dict = moveit_config_builder.to_moveit_configs().to_dict()
+        # moveit_config_builder = MoveItConfigsBuilder('iiwa14_tool')
+        # moveit_config_builder.moveit_cpp(file_path=get_package_share_directory("iiwa14_tool_moveit_config") + "/config/planing_pipeline_config.yaml")
+        # moveit_config_builder.robot_description(os.path.join(get_package_share_directory('lbr_description'),'urdf/iiwa14_tool/iiwa14_tool.xacro'))
+        # moveit_config_dict = moveit_config_builder.to_moveit_configs().to_dict()
 
-        self.lbr : MoveItPy = MoveItPy(node_name='moveit_py',config_dict = moveit_config_dict)
-        psm : PlanningSceneMonitor = self.lbr.get_planning_scene_monitor()
-        psm.start_scene_monitor('monitored_planning_scene')
-        self.lbr_arm : PlanningComponent = self.lbr.get_planning_component('arm')
-        self.get_logger().info('MoveItPy initialized')
+        # self.lbr : MoveItPy = MoveItPy(node_name='moveit_py',config_dict = moveit_config_dict)
+        # psm : PlanningSceneMonitor = self.lbr.get_planning_scene_monitor()
+        # psm.start_scene_monitor('monitored_planning_scene')
+        # self.lbr_arm : PlanningComponent = self.lbr.get_planning_component('arm')
+        # self.get_logger().info('MoveItPy initialized')
 
-        planning_scene = PlanningScene(self.lbr.get_robot_model())
+        # planning_scene = PlanningScene(self.lbr.get_robot_model())
 
-        self.lbr_arm.set_start_state_to_current_state()
-        goal = self.tf_buffer.lookup_transform(self.base_frame,'target',rclpy.time.Time())
-        goal_pose = PoseStamped()
-        goal_pose.header.stamp = self.get_clock().now().to_msg()
-        goal_pose.header.frame_id = self.base_frame
-        goal_pose.pose.position.x = goal.transform.translation.x
-        goal_pose.pose.position.y = goal.transform.translation.y
-        goal_pose.pose.position.z = goal.transform.translation.z
-        goal_pose.pose.orientation.x = goal.transform.rotation.x
-        goal_pose.pose.orientation.y = goal.transform.rotation.y
-        goal_pose.pose.orientation.z = goal.transform.rotation.z
-        goal_pose.pose.orientation.w = goal.transform.rotation.w
+        # self.lbr_arm.set_start_state_to_current_state()
+        # goal = self.tf_buffer.lookup_transform(self.base_frame,'target',rclpy.time.Time())
+        # goal_pose = PoseStamped()
+        # goal_pose.header.stamp = self.get_clock().now().to_msg()
+        # goal_pose.header.frame_id = self.base_frame
+        # goal_pose.pose.position.x = goal.transform.translation.x
+        # goal_pose.pose.position.y = goal.transform.translation.y
+        # goal_pose.pose.position.z = goal.transform.translation.z
+        # goal_pose.pose.orientation.x = goal.transform.rotation.x
+        # goal_pose.pose.orientation.y = goal.transform.rotation.y
+        # goal_pose.pose.orientation.z = goal.transform.rotation.z
+        # goal_pose.pose.orientation.w = goal.transform.rotation.w
 
 
-        self.lbr_arm.set_goal_state(pose_stamped_msg = goal_pose,pose_link = self.TCP_frame)
-        self.get_logger().info('Type : {}'.format(type(psm)))
-        try:
-            plan = self.lbr_arm.plan(PlanRequestParameters(self.lbr,''))
-            time.sleep(5)
-            future = self.lbr.execute(plan.trajectory,[])
-        except Exception as e:
-            self.get_logger().error('Error while planning : {}'.format(e))
-            self.get_logger().info('Type : {}'.format(type(self.lbr_arm)))
+        # self.lbr_arm.set_goal_state(pose_stamped_msg = goal_pose,pose_link = self.TCP_frame)
+        # self.get_logger().info('Type : {}'.format(type(psm)))
+        # try:
+        #     plan = self.lbr_arm.plan(PlanRequestParameters(self.lbr,''))
+        #     time.sleep(5)
+        #     future = self.lbr.execute(plan.trajectory,[])
+        # except Exception as e:
+        #     self.get_logger().error('Error while planning : {}'.format(e))
+        #     self.get_logger().info('Type : {}'.format(type(self.lbr_arm)))
             
-        rclpy.spin_until_future_complete(self,future)
+        # rclpy.spin_until_future_complete(self,future)
         self.init_pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
         self.init_pose.child_frame_id = 'init_pose'
         #self.init_pose.header.frame_id = 'lbr_link_0'
