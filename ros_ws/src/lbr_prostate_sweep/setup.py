@@ -29,6 +29,7 @@ setup(
             'needle_aim=lbr_prostate_sweep.needle_aim:main',
             'needle_aim_wire=lbr_prostate_sweep.needle_aim_wire:main',
             'helper_node=lbr_prostate_sweep.helper_node:main',
+            'force_compensation=lbr_prostate_sweep.force_compensation:main',
         ],
     },
 )
