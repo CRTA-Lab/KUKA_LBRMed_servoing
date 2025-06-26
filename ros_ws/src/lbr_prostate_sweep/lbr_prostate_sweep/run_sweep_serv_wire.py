@@ -12,7 +12,7 @@ from std_srvs.srv import Trigger
 #from moveit.core import RobotModel
 from moveit.core.planning_scene import PlanningScene
 from moveit.planning import MoveItPy, PlanningComponent, PlanRequestParameters, PlanningSceneMonitor
-from moveit_msgs.msg import Constraints, JointConstraint
+from moveit_msgs.srv import ServoCommandType
 from moveit_configs_utils import MoveItConfigsBuilder
 from ament_index_python import get_package_share_directory
 import cv2
@@ -27,13 +27,20 @@ import os
 def angle_conversion(euler):
     r = Rotation.from_euler('ZYX',euler,degrees=False)
     rot_angles = r.as_quat()
-    print(rot_angles)
+    #print(rot_angles)
     return rot_angles
 
 class SweepNode(Node):
     '''Node for performing the sweep with the robot'''
     def __init__(self):
         super().__init__('SweepNode')
+
+        cmd_typ_srv = self.create_client(ServoCommandType,'/lbr/servo_node/switch_command_type')
+        cmd_typ_srv.wait_for_service()
+        self.get_logger().info('Service started')
+        req = ServoCommandType.Request()
+        req.command_type = 1
+        cmd_typ_srv.call_async(req)
 
         # start CvBridge for converting between images and ros msgs
         self.bridge = CvBridge()
@@ -50,6 +57,8 @@ class SweepNode(Node):
 
         self.start_serv = self.create_service(Trigger,'/sweep/start',self.sweep_start,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
         self.edge_serv = self.create_service(Trigger,'/sweep/edge_trigger',self.edge_triger,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
+
+        
         
         # initialize transfrom listener to obtain the transformation between robot base and TCP
         self.tf_buffer = Buffer()
@@ -69,7 +78,7 @@ class SweepNode(Node):
         self.changed_dir = False
         self.capture_flag = True
         
-        self.img_path = '/home/matija/KUKA_LBRMed_servoing/US_pics/sweep_P1_{}_{}'.format(time.localtime().tm_hour,time.localtime().tm_min)
+        self.img_path = '/home/racunalo/KUKA_LBRMed_servoing/US_pics/sweep_P1_{}_{}'.format(time.localtime().tm_hour,time.localtime().tm_min)
         os.mkdir(self.img_path)
         os.mkdir(self.img_path + '/input_images')
         os.mkdir(self.img_path + '/output_images')
@@ -299,6 +308,7 @@ class SweepNode(Node):
             else:
                 msg_out.twist.angular.x = 0.8
             msg_out.header.stamp = self.get_clock().now().to_msg()
+            msg_out.header.frame_id = self.TCP_frame
             self.twist_pub.publish(msg_out)
 
         # if position was not initialized, check if ther is valid position data and initialize the 

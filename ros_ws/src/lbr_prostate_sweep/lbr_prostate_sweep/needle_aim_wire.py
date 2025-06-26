@@ -45,7 +45,7 @@ class AimNode(Node):
 
         self.tracker = self.camera_setup()
 
-        self.targets_log = open('/home/matija/KUKA_LBRMed_servoing/US_pics/targets/targets.txt','w')
+        self.targets_log = open('/home/racunalo/KUKA_LBRMed_servoing/US_pics/targets/targets.txt','w')
 
         # initializeing the variables
         self.sweep_frame = 'init_pose'
@@ -117,7 +117,7 @@ class AimNode(Node):
     
     def save_img(self,angle):
         if not self.img_save_flag:
-            cv2.imwrite('/home/matija/KUKA_LBRMed_servoing/US_pics/targets/target_{}_{:.4f}.jpg'.format(self.target_no+1,angle),self.last_img)
+            cv2.imwrite('/home/racunalo/KUKA_LBRMed_servoing/US_pics/targets/target_{}_{:.4f}.jpg'.format(self.target_no+1,angle),self.last_img)
             self.img_save_flag = True
             self.get_logger().info('Saved image for target {} at angle {}'.format(self.target_no+1,angle))
         return
@@ -134,8 +134,8 @@ class AimNode(Node):
         SETTINGS = {
             "tracker type": "vega",
             "ip address": "192.168.0.120",
-            "romfiles" : ["/home/matija/KUKA_LBRMed_servoing/markeri/8700339_wire_phantom.rom",
-                        "/home/matija/KUKA_LBRMed_servoing/markeri/FEM0001_biopsy_needle.rom"],
+            "romfiles" : ["/home/racunalo/KUKA_LBRMed_servoing/markeri/8700339_wire_phantom.rom",
+                        "/home/racunalo/KUKA_LBRMed_servoing/markeri/FEM0001_biopsy_needle.rom"],
             
             }
         TRACKER = NDITracker(SETTINGS)
