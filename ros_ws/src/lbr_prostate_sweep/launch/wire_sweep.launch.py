@@ -74,7 +74,7 @@ def generate_launch_description():
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('lbr_bringup'), 'launch'),
          '/moveit_servo.launch.py']),
-         launch_arguments={'model': LaunchConfiguration('model'), 'mode':LaunchConfiguration('mode')}.items() 
+         launch_arguments={'model': LaunchConfiguration('model'), 'mode':LaunchConfiguration('mode'),'command_type':'twist'}.items()
 
     )
 

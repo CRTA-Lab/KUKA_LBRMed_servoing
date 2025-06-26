@@ -14,10 +14,15 @@ joint_limits:
     has_acceleration_limits: true
     max_acceleration: 10.0
   lbr_A2:
+    max_position: 0.7
+    min_position: -0.7
     has_velocity_limits: true
     max_velocity: 1.4835298641951802
     has_acceleration_limits: true
     max_acceleration: 10.0
+  lbr_A3:
+    max_position: 1.7
+    min_position: -1.7
     has_velocity_limits: true
     max_velocity: 1.7453292519943295
     has_acceleration_limits: true
@@ -28,6 +33,8 @@ joint_limits:
     has_acceleration_limits: true
     max_acceleration: 10.0
   lbr_A5:
+    max_position: 1.7
+    min_position: -1.7
     has_velocity_limits: true
     max_velocity: 2.2689280275926285
     has_acceleration_limits: true

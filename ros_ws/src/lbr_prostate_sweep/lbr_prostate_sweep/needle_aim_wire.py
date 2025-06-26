@@ -197,10 +197,10 @@ class AimNode(Node):
         if not self.angle_flag:
             msg = TwistStamped()
             ctrl = 50*delta
-            if ctrl > 1:
-                ctrl = float(1)
-            elif ctrl <-1:
-                ctrl = float(-1)
+            if ctrl > 0.8:
+                ctrl = 0.8
+            elif ctrl <-0.8:
+                ctrl = -0.8
             msg.twist.angular.x = ctrl
             msg.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg)
@@ -221,10 +221,10 @@ class AimNode(Node):
             if abs(delta_p) > 0.1:
                 msg = TwistStamped()
                 ctrl = 0.15*delta_p
-                if ctrl > 1:
-                    ctrl = float(1)
-                elif ctrl <-1:
-                    ctrl = float(-1)
+                if ctrl > 0.4:
+                    ctrl = 0.4
+                elif ctrl <-0.4:
+                    ctrl = -0.4
                 msg.twist.linear.y = ctrl
                 msg.header.stamp = self.get_clock().now().to_msg()
                 self.twist_pub.publish(msg)

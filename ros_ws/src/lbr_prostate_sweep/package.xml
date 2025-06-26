@@ -24,6 +24,7 @@
   <depend>ros2launch</depend>
   <depend>scikit-surgerynditracker</depend>
   <depend>ndicapi</depend>
+  <depend>moveit</depend>
 
 
   <export>

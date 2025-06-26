@@ -12,6 +12,7 @@ from std_srvs.srv import Trigger
 #from moveit.core import RobotModel
 from moveit.core.planning_scene import PlanningScene
 from moveit.planning import MoveItPy, PlanningComponent, PlanRequestParameters, PlanningSceneMonitor
+from moveit_msgs.msg import Constraints, JointConstraint
 from moveit_configs_utils import MoveItConfigsBuilder
 from ament_index_python import get_package_share_directory
 import cv2
@@ -116,47 +117,53 @@ class SweepNode(Node):
 
         # self.lbr_arm = PlanningComponent('arm',planning_scene_monitor=planing_scene)
 
-        # moveit_config_builder = MoveItConfigsBuilder('iiwa14_tool')
-        # moveit_config_builder.moveit_cpp(file_path=get_package_share_directory("iiwa14_tool_moveit_config") + "/config/planing_pipeline_config.yaml")
-        # moveit_config_builder.robot_description(os.path.join(get_package_share_directory('lbr_description'),'urdf/iiwa14_tool/iiwa14_tool.xacro'))
-        # moveit_config_dict = moveit_config_builder.to_moveit_configs().to_dict()
+        moveit_config_builder = MoveItConfigsBuilder('iiwa14_tool')
+        moveit_config_builder.moveit_cpp(file_path=get_package_share_directory("iiwa14_tool_moveit_config") + "/config/planing_pipeline_config.yaml")
+        moveit_config_builder.robot_description(os.path.join(get_package_share_directory('lbr_description'),'urdf/iiwa14_tool/iiwa14_tool.xacro'))
+        moveit_config_dict = moveit_config_builder.to_moveit_configs().to_dict()
 
-        # self.lbr : MoveItPy = MoveItPy(node_name='moveit_py',config_dict = moveit_config_dict)
-        # psm : PlanningSceneMonitor = self.lbr.get_planning_scene_monitor()
-        # psm.start_scene_monitor('monitored_planning_scene')
-        # self.lbr_arm : PlanningComponent = self.lbr.get_planning_component('arm')
-        # self.get_logger().info('MoveItPy initialized')
+        self.lbr : MoveItPy = MoveItPy(node_name='moveit_py',config_dict = moveit_config_dict)
+        psm : PlanningSceneMonitor = self.lbr.get_planning_scene_monitor()
+        psm.start_scene_monitor('monitored_planning_scene')
+        self.lbr_arm : PlanningComponent = self.lbr.get_planning_component('arm')
+        self.get_logger().info('MoveItPy initialized')
 
-        # planning_scene = PlanningScene(self.lbr.get_robot_model())
+        planning_scene = PlanningScene(self.lbr.get_robot_model())
 
-        # self.lbr_arm.set_start_state_to_current_state()
-        # goal = self.tf_buffer.lookup_transform(self.base_frame,'target',rclpy.time.Time())
-        # goal_pose = PoseStamped()
-        # goal_pose.header.stamp = self.get_clock().now().to_msg()
-        # goal_pose.header.frame_id = self.base_frame
-        # goal_pose.pose.position.x = goal.transform.translation.x
-        # goal_pose.pose.position.y = goal.transform.translation.y
-        # goal_pose.pose.position.z = goal.transform.translation.z
-        # goal_pose.pose.orientation.x = goal.transform.rotation.x
-        # goal_pose.pose.orientation.y = goal.transform.rotation.y
-        # goal_pose.pose.orientation.z = goal.transform.rotation.z
-        # goal_pose.pose.orientation.w = goal.transform.rotation.w
+        self.lbr_arm.set_start_state_to_current_state()
+        goal = self.tf_buffer.lookup_transform(self.base_frame,'init_pose',rclpy.time.Time())
+        goal_pose = PoseStamped()
+        goal_pose.header.stamp = self.get_clock().now().to_msg()
+        goal_pose.header.frame_id = self.base_frame
+        goal_pose.pose.position.x = goal.transform.translation.x
+        goal_pose.pose.position.y = goal.transform.translation.y
+        goal_pose.pose.position.z = goal.transform.translation.z
+        goal_pose.pose.orientation.x = goal.transform.rotation.x
+        goal_pose.pose.orientation.y = goal.transform.rotation.y
+        goal_pose.pose.orientation.z = goal.transform.rotation.z
+        goal_pose.pose.orientation.w = goal.transform.rotation.w
 
-
-        # self.lbr_arm.set_goal_state(pose_stamped_msg = goal_pose,pose_link = self.TCP_frame)
-        # self.get_logger().info('Type : {}'.format(type(psm)))
-        # try:
-        #     plan = self.lbr_arm.plan(PlanRequestParameters(self.lbr,''))
-        #     time.sleep(5)
-        #     future = self.lbr.execute(plan.trajectory,[])
-        # except Exception as e:
-        #     self.get_logger().error('Error while planning : {}'.format(e))
-        #     self.get_logger().info('Type : {}'.format(type(self.lbr_arm)))
+        self.get_logger().info('Goal pose : {}'.format(goal_pose.__str__()))
+        
+        # constraint = Constraints()
+        # constraint.joint_constraints = []
+        self.lbr_arm.set_goal_state(pose_stamped_msg = goal_pose,pose_link = self.TCP_frame)
+        #self.lbr_arm.set_path_constraints(constraint)
+        self.get_logger().info('Type : {}'.format(type(psm)))
+        try:
+            plan = self.lbr_arm.plan(PlanRequestParameters(self.lbr,''))
+            time.sleep(5)
+            future = self.lbr.execute(plan.trajectory,[])
+        except Exception as e:
+            self.get_logger().error('Error while planning : {}'.format(e))
+            self.get_logger().info('Type : {}'.format(type(self.lbr_arm)))
             
-        # rclpy.spin_until_future_complete(self,future)
-        self.init_pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
-        self.init_pose.child_frame_id = 'init_pose'
-        #self.init_pose.header.frame_id = 'lbr_link_0'
+        #rclpy.spin_until_future_complete(self,future)
+
+        # self.init_pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
+        # self.init_pose.child_frame_id = 'init_pose'
+        # #self.init_pose.header.frame_id = 'lbr_link_0'
+        self.init_pose = True
         return
 
 
@@ -166,11 +173,10 @@ class SweepNode(Node):
         pose.header.stamp = self.get_clock().now().to_msg()
         pose.header.frame_id = 'lbr_link_0'
         pose.child_frame_id = self.phantom_frame
-        frame = [-193.62930448646964,555.7281724246884,76.66164793994926,2.8991537198756734,-1.4721502430548297,1.8866531711544678]
+        frame = [-147.68118576622177,570.5117593757076,67.71456951886258,2.8931275358938513,-1.4410606999938667,2.02999793315993]
         pose.transform.translation.x = frame[0]/1000
         pose.transform.translation.y = frame[1]/1000
         pose.transform.translation.z = frame[2]/1000
-        angle_quat = angle_conversion(frame[3:6])
         angle_quat = angle_conversion(frame[3:6])
         pose.transform.rotation.x = angle_quat[0]
         pose.transform.rotation.y = angle_quat[1]
@@ -181,20 +187,20 @@ class SweepNode(Node):
         pose = TransformStamped()
         pose.header.stamp = self.get_clock().now().to_msg()
         pose.header.frame_id = self.phantom_frame
-        pose.child_frame_id = 'target'
-        pose.transform.translation.x = 0.05
-        pose.transform.translation.y = -0.05
-        pose.transform.translation.z = -0.05
-        pose.transform.rotation.x = -1.0
+        pose.child_frame_id = 'init_pose'
+        pose.transform.translation.x = 0.035
+        pose.transform.translation.y = -0.015
+        pose.transform.translation.z = -0.035
+        pose.transform.rotation.x = 0.0
         pose.transform.rotation.y = 0.0
-        pose.transform.rotation.z = 0.0
+        pose.transform.rotation.z = 1.0
         pose.transform.rotation.w = 0.0
         self.tf_broadcaster.sendTransform(pose)
 
-        if self.init_pose != None:
-            initial_pose = self.init_pose
-            initial_pose.header.stamp = self.get_clock().now().to_msg()
-            self.tf_broadcaster.sendTransform(initial_pose)
+        # if self.init_pose != None:
+        #     initial_pose = self.init_pose
+        #     initial_pose.header.stamp = self.get_clock().now().to_msg()
+        #     self.tf_broadcaster.sendTransform(initial_pose)
         return
     
     def find_blobs(self,image,angle):
@@ -265,7 +271,7 @@ class SweepNode(Node):
         '''
         # check if posiiton was initialized, if not don't start sweep
         #self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
-        if self.init_pose != None:
+        if self.init_pose:
             if not self.start_flag:return
             if self.end_flag:
                 self.get_logger().info('Sweep finished, stoping subscription')
@@ -289,14 +295,15 @@ class SweepNode(Node):
             msg_out = TwistStamped()
             if self.back_flag:
                 self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
-                msg_out.twist.angular.x = -1.0
+                msg_out.twist.angular.x = -0.8
             else:
-                msg_out.twist.angular.x = 1.0
+                msg_out.twist.angular.x = 0.8
             msg_out.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg_out)
 
         # if position was not initialized, check if ther is valid position data and initialize the 
-        elif msg.angle != float('inf'):
+        elif msg.angle != float('inf') and self.init_pose == None:
+            self.init_pose = False
             self.get_logger().info('Inicijalizacija')
             self.initialize_pose()
             # msg_out = TwistStamped()
