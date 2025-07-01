@@ -31,10 +31,10 @@ class TargetCalculator:
         self.probe_pose[:3,3] = np.array([34.9,62.85,-70.96])
         rot = Rotation.from_euler('ZYX',[-174.18,-0.40,-2.82],degrees=True)
         self.probe_pose[:3,:3] = rot.as_matrix()
-        self.probe_pose = np.array([[-9.92859649e-01,  1.14142982e-01,  3.46568411e-02,  2.10784218e+01],
-                                    [-1.15130110e-01, -9.92956862e-01, -2.79593913e-02, -2.93563825e+01],
-                                    [ 3.12213799e-02, -3.17497974e-02,  9.99008096e-01, -3.63443681e+01],
-                                    [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+        self.probe_pose = np.array([[ -1.0,   0,   0,  20],
+                                    [  0,  -1.0,   0, -30],
+                                    [  0,   0,   1, -35],
+                                    [  0,   0,   0,   1]])
         return
 
 
@@ -50,11 +50,12 @@ class TargetCalculator:
         return target_position[:3,3]
     
     def calculate_target2(self,target_no):
-        target = [self.probe_pose[0,3]+(self.targets[target_no][0]-30), self.probe_pose[1,3]+(self.targets[target_no][1] + 9)*np.cos(self.targets[target_no][2]), self.probe_pose[2,3]-(self.targets[target_no][1] + 9)*np.sin(self.targets[target_no][2])]
+        target = [self.probe_pose[0,3]+(self.targets[target_no][0]-30), self.probe_pose[1,3]+(self.targets[target_no][1] + 9)*np.cos(self.targets[target_no][2]), self.probe_pose[2,3]+(self.targets[target_no][1] + 9)*np.sin(self.targets[target_no][2])]
         return target
 
 def main():
     calc = TargetCalculator()
+    print(calc.probe_pose)
     for i in range(np.size(calc.targets,0)):
         print('Target {}: {}; Needle position : {}'.format(i+1, calc.calculate_target2(i), calc.positions[i]))
     
