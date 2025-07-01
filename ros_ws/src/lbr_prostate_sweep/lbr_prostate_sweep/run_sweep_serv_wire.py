@@ -35,12 +35,19 @@ class SweepNode(Node):
     def __init__(self):
         super().__init__('SweepNode')
 
+        # start_service = self.create_client(Trigger,'/lbr/servo_node/start_servo')
+        # #start_service.wait_for_service()
+        # future = start_service.call_async(Trigger.Request())
+        # #rclpy.spin_until_future_complete(self,future)
+
         cmd_typ_srv = self.create_client(ServoCommandType,'/lbr/servo_node/switch_command_type')
         cmd_typ_srv.wait_for_service()
         self.get_logger().info('Service started')
         req = ServoCommandType.Request()
         req.command_type = 1
-        cmd_typ_srv.call_async(req)
+        future = cmd_typ_srv.call_async(req)
+        rclpy.spin_until_future_complete(self,future)
+        self.get_logger().info('Servo type chosen')
 
         # start CvBridge for converting between images and ros msgs
         self.bridge = CvBridge()
@@ -182,7 +189,7 @@ class SweepNode(Node):
         pose.header.stamp = self.get_clock().now().to_msg()
         pose.header.frame_id = 'lbr_link_0'
         pose.child_frame_id = self.phantom_frame
-        frame = [-147.68118576622177,570.5117593757076,67.71456951886258,2.8931275358938513,-1.4410606999938667,2.02999793315993]
+        frame = [-160.82823079155838,556.0091006173573,82.99868746854946,2.837467723277029,-1.4501016336169505,1.9657469196912427]
         pose.transform.translation.x = frame[0]/1000
         pose.transform.translation.y = frame[1]/1000
         pose.transform.translation.z = frame[2]/1000
@@ -197,8 +204,8 @@ class SweepNode(Node):
         pose.header.stamp = self.get_clock().now().to_msg()
         pose.header.frame_id = self.phantom_frame
         pose.child_frame_id = 'init_pose'
-        pose.transform.translation.x = 0.035
-        pose.transform.translation.y = -0.015
+        pose.transform.translation.x = 0.02
+        pose.transform.translation.y = -0.03
         pose.transform.translation.z = -0.035
         pose.transform.rotation.x = 0.0
         pose.transform.rotation.y = 0.0
@@ -304,11 +311,11 @@ class SweepNode(Node):
             msg_out = TwistStamped()
             if self.back_flag:
                 self.find_blobs(self.bridge.imgmsg_to_cv2(msg.image),msg.angle)
-                msg_out.twist.angular.x = -0.8
+                msg_out.twist.angular.x = -0.15
             else:
-                msg_out.twist.angular.x = 0.8
+                msg_out.twist.angular.x = 0.15
             msg_out.header.stamp = self.get_clock().now().to_msg()
-            msg_out.header.frame_id = self.TCP_frame
+            msg_out.header.frame_id =self.TCP_frame
             self.twist_pub.publish(msg_out)
 
         # if position was not initialized, check if ther is valid position data and initialize the 

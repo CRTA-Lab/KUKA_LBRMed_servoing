@@ -60,6 +60,8 @@ class AimNode(Node):
         self.last_img = None
         self.img_save_flag = False
         self.goal_flag = False
+        self.dist_prev = 10
+        self.dir = 1
 
         self.probe_pose = 0
         
@@ -106,8 +108,10 @@ class AimNode(Node):
         else:
             self.needle_flag = False
             self.target_no += 1
-            if self.target_no > len(self.targets):
+            if self.target_no >= len(self.targets):
+                self.get_logger().info('Targeting finished, destroying node')
                 self.targets_log.close()
+                
                 self.destroy_node()
                 return response
             self.position_flag = True
@@ -196,37 +200,47 @@ class AimNode(Node):
 
         if not self.angle_flag:
             msg = TwistStamped()
-            ctrl = 50*delta
-            if ctrl > 0.8:
-                ctrl = 0.8
-            elif ctrl <-0.8:
-                ctrl = -0.8
+            ctrl = 3*delta
+            if ctrl > 1:
+                ctrl = 1.0
+            elif ctrl <-1:
+                ctrl = -1.0
             msg.twist.angular.x = ctrl
             msg.header.stamp = self.get_clock().now().to_msg()
+            msg.header.frame_id = self.TCP_frame
             self.twist_pub.publish(msg)
         else:
             trans = self.tf_buffer.lookup_transform(self.sweep_frame,self.TCP_frame,rclpy.time.Time())
             dist = math.sqrt((trans.transform.translation.y**2 + trans.transform.translation.z**2))*1000
+            dist = abs(trans.transform.translation.y)*1000
             
             if not self.position_flag:
                 delta_p = 5-(self.targets[self.target_no][1]%5) - dist
             else:
-                delta_p = -dist
-                if abs(delta_p) < 0.1:
+                self.get_logger().info('Dist: {}   delta_prev: {}    dir: {}'.format(dist,self.dist_prev,self.dir))
+                if dist > self.dist_prev+0.05:
+                    self.dir*=-1
+                delta_p = -dist/2*self.dir
+                self.dist_prev = dist
+                if abs(delta_p) < 0.2:
+                    self.get_logger().info('Returned to init position')
                     self.angle_flag = False
                     self.img_save_flag = False
                     self.position_flag = False
                     self.goal_flag = False
+                    self.dist_prev = 10
+                    self.dir = 1
             #self.get_logger().info('Current position: {}\tTarget position: {}\tDelta: {}'.format(dist,5-(self.targets[self.target_no][1]%5),delta_p))
             if abs(delta_p) > 0.1:
                 msg = TwistStamped()
-                ctrl = 0.15*delta_p
-                if ctrl > 0.4:
-                    ctrl = 0.4
-                elif ctrl <-0.4:
-                    ctrl = -0.4
+                ctrl = 0.015*delta_p
+                if ctrl > 1:
+                    ctrl = 1.0
+                elif ctrl <-1:
+                    ctrl = -1.0
                 msg.twist.linear.y = ctrl
                 msg.header.stamp = self.get_clock().now().to_msg()
+                msg.header.frame_id = self.TCP_frame
                 self.twist_pub.publish(msg)
             elif not self.goal_flag:
                 self.get_logger().info('target reached')
