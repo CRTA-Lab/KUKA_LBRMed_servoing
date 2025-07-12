@@ -33,7 +33,8 @@ class SweepNode(Node):
         self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # create publisher for moveit servo delta_twist_cmds topic
-        self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_sensor_data,callback_group=self.pub_sub_cbg)
+        #self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.twist_pub = self.create_publisher(TwistStamped,'/twist_cmd',qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         self.start_serv = self.create_service(Trigger,'/sweep/start',self.sweep_start,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
         self.edge_serv = self.create_service(Trigger,'/sweep/edge_trigger',self.edge_triger,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
@@ -55,6 +56,8 @@ class SweepNode(Node):
         self.changed_dir = False
         #self.zcf = True # zero cross flag
 
+        
+
         self.get_logger().info('Init done')
 
     def ft_callback(self,msg:WrenchStamped):
@@ -66,6 +69,7 @@ class SweepNode(Node):
         self.start_flag = True
         self.get_logger().info('Sweep started')
         self.get_logger().info('Initial force = {}'.format(self.wrench))
+        response.success = True
         return response
 
 
@@ -75,6 +79,7 @@ class SweepNode(Node):
         self.get_logger().info('Changed directon')
         if self.changed_dir:
             self.end_flag = True
+            
         else:
             self.changed_dir = True
         return response
@@ -95,6 +100,19 @@ class SweepNode(Node):
             pose = self.init_pose
             pose.header.stamp = self.get_clock().now().to_msg()
             self.tf_broadcaster.sendTransform(pose)
+
+            if self.start_flag:
+                msg_out = TwistStamped()
+                if self.back_flag:
+                    msg_out.twist.angular.x = -1.0
+                else:
+                    msg_out.twist.angular.x = 1.0
+                #msg_out.twist.linear.x = 0.6
+                msg_out.header.stamp = self.get_clock().now().to_msg()
+                #msg_out.header.frame_id = self.TCP_frame
+                self.twist_pub.publish(msg_out)
+
+
         return
 
 
@@ -109,6 +127,10 @@ class SweepNode(Node):
         if self.init_pose != None:
             if not self.start_flag:return
             if self.end_flag:
+                self.start_flag = False
+                msg_out = TwistStamped()
+                msg_out.header.stamp = self.get_clock().now().to_msg()
+                self.twist_pub.publish(msg_out)
                 self.get_logger().info('Sweep finished, stoping subscription')
                 self.destroy_subscription(self.img_sub)
                 return
@@ -133,13 +155,15 @@ class SweepNode(Node):
             #     self.zcf = True
 
             # create and publish msg
-            msg_out = TwistStamped()
-            if self.back_flag:
-                msg_out.twist.angular.x = -1.0
-            else:
-                msg_out.twist.angular.x = 1.0
-            msg_out.header.stamp = self.get_clock().now().to_msg()
-            self.twist_pub.publish(msg_out)
+            # msg_out = TwistStamped()
+            # if self.back_flag:
+            #     msg_out.twist.angular.x = -1.0
+            # else:
+            #     msg_out.twist.angular.x = 1.0
+            # #msg_out.twist.linear.x = 0.6
+            # msg_out.header.stamp = self.get_clock().now().to_msg()
+            # #msg_out.header.frame_id = self.TCP_frame
+            # self.twist_pub.publish(msg_out)
 
         # if position was not initialized, check if ther is valid position data and initialize the 
         elif msg.angle != float('inf'):

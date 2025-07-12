@@ -20,7 +20,7 @@ def generate_launch_description():
 
     model = DeclareLaunchArgument(
         'model',
-        default_value='iiwa14_tool',
+        default_value='iiwa14',
         description='Used lbr model',
         choices=['iiwa7', 'iiwa14', 'med7', 'med14','iiwa14_tool']
     )
@@ -84,6 +84,17 @@ def generate_launch_description():
 
     ])
 
+    force_comp = GroupAction([    
+    PushRosNamespace(namespace),
+
+    Node(
+        package='lbr_prostate_sweep',
+        executable='force_compensation',
+        output='log',
+    )
+
+    ])
+
     ld = LaunchDescription([
             namespace_launch_arg,
             model,mode
@@ -91,6 +102,7 @@ def generate_launch_description():
     ld.add_action(image_acq)
     ld.add_action(servoing)
     ld.add_action(aiming)
+    ld.add_action(force_comp)
     ld.add_action(robot_description)
     ld.add_action(moveit_servo)
 
