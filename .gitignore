@@ -4,3 +4,6 @@ ros_ws/log
 logs
 US_pics
 .vscode
+vtk
+ros_ws/cls_epoch_9.pth
+ros_ws/cls_epoch_19.pth
