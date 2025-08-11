@@ -37,7 +37,7 @@ class ImageAquisition(Node):
         self.create_timer(1/23,self.get_image)
 
         # connecting to the US
-        self.cap = cv2.VideoCapture(4)
+        self.cap = cv2.VideoCapture(0)
         
         return
  

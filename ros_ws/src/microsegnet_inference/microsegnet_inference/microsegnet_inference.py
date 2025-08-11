@@ -5,6 +5,7 @@ from cv_bridge import CvBridge
 import cv2
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, qos_profile_system_default
 from std_srvs.srv import Trigger
+from std_msgs.msg import Float32
 from rclpy.callback_groups import ReentrantCallbackGroup
 import argparse
 import torch
@@ -26,7 +27,9 @@ class MicrosegnetNode(Node):
         cb_grup = ReentrantCallbackGroup()
 
         #Ultrasound image subscriber
-        self.create_subscription(ImageMeta, '/US_image', self.read_ultrasound_callback, qos_profile=qos_profile_system_default,callback_group=cb_grup)
+        self.create_subscription(ImageMeta, '/US_image', self.read_ultrasound_callback, qos_profile=qos_profile_system_default, callback_group=cb_grup)
+
+        self.position_publisher = self.create_publisher(Float32, '/axial_position', qos_profile=qos_profile_system_default, callback_group=cb_grup)
         self.bridge = CvBridge()
         
         #Process triggers
@@ -81,7 +84,9 @@ class MicrosegnetNode(Node):
         self.net.eval()
         #Ultrasound roation angle check
         self.angle=None
-        self.segmenation_start=False
+
+        #TODO: Vratit na False
+        self.segmenation_start=True
 
         #Blank annotation counter - for switching the sweep orientation
         self.blank_images_counter=0
@@ -121,8 +126,8 @@ class MicrosegnetNode(Node):
             self.segmenation_start=True
 
         #Check if the image_angle is different to the stored angle (if they are the same, it is the same image)
-        if self.image_angle != self.angle:
-            
+        # TODO: Remove or True when done testing
+        if self.image_angle != self.angle or True:
             self.angle = self.image_angle
             #print(type(self.angle),flush=True)
             self.image= cv2.cvtColor(self.cv2_image, cv2.COLOR_BGR2GRAY)
@@ -191,71 +196,88 @@ class MicrosegnetNode(Node):
                     if self.start_sweep_recording==False:
                             self.start_sweep_recording=True
 
-                if self.start_recording == True:
-                    self.get_logger().info('Recording!')
+                
+                self.get_logger().info('Recording!')
 
-                    if x != patch_size[0] or y != patch_size[1]:
-                        pred = cv2.resize(out, (y, x), interpolation = cv2.INTER_NEAREST)
+                if x != patch_size[0] or y != patch_size[1]:
+                    pred = cv2.resize(out, (y, x), interpolation = cv2.INTER_NEAREST)
+                
+                #Create a binary mask from predicitons
+                a = 1.0*(pred>0.5)
+                prediction = a.astype(np.uint8)
+                #Resize to original image (fix - autmate)
+                prediction=cv2.resize(prediction, (self.image.shape[1],self.image.shape[0]))
+                prediction = cv2.normalize(prediction, dst=None, alpha=0, beta=255,norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+                #Find contours on predicted masks (used for visualization)
+                contours, hierarchy = cv2.findContours(prediction,cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                #Smooth the contours
+                smoothened = []
+                CURVE_THRESHOLD = 0.018 # Threshold for curvature filtering
+
+                for contour in contours:
                     
-                    #Create a binary mask from predicitons
-                    a = 1.0*(pred>0.5)
-                    prediction = a.astype(np.uint8)
-                    #Resize to original image (fix - autmate)
-                    prediction=cv2.resize(prediction, (self.image.shape[1],self.image.shape[0]))
-                    prediction = cv2.normalize(prediction, dst=None, alpha=0, beta=255,norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-                    #Find contours on predicted masks (used for visualization)
-                    contours, hierarchy = cv2.findContours(prediction,cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                    #Smooth the contours
-                    smoothened = []
-                    CURVE_THRESHOLD = 0.018 # Threshold for curvature filtering
+                    # Compute perimeter
+                    perimeter = cv2.arcLength(contour, closed=True)
 
-                    for contour in contours:
-                        
-                        # Compute perimeter
-                        perimeter = cv2.arcLength(contour, closed=True)
+                    # Approximate polygon and check deviation
+                    approx = cv2.approxPolyDP(contour, epsilon=CURVE_THRESHOLD * perimeter, closed=True)
+                    if len(approx) > 10:  # You can tweak this threshold
+                        continue
 
-                        # Approximate polygon and check deviation
-                        approx = cv2.approxPolyDP(contour, epsilon=CURVE_THRESHOLD * perimeter, closed=True)
-                        if len(approx) > 10:  # You can tweak this threshold
-                            continue
+                    x_1,y_1 = contour.T
+                    # Convert from numpy arrays to normal arrays
+                    x_1 = x_1.tolist()[0]
+                    y_1 = y_1.tolist()[0]
+                    # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.interpolate.splprep.html
+                    tck, u = splprep([x_1,y_1], u=None, s=0.0, k=1, per=1)
+                    # https://docs.scipy.org/doc/numpy-1.10.1/reference/generated/numpy.linspace.html
+                    u_new = np.linspace(u.min(), u.max(), 100)
 
-                        x_1,y_1 = contour.T
-                        # Convert from numpy arrays to normal arrays
-                        x_1 = x_1.tolist()[0]
-                        y_1 = y_1.tolist()[0]
-                        # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.interpolate.splprep.html
-                        tck, u = splprep([x_1,y_1], u=None, s=0.0, k=1, per=1)
-                        # https://docs.scipy.org/doc/numpy-1.10.1/reference/generated/numpy.linspace.html
-                        u_new = np.linspace(u.min(), u.max(), 100)
+                    
+                    # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.interpolate.splev.html
+                    x_new, y_new = splev(u_new, tck, der=0)
+                    # Convert it back to numpy format for opencv to be able to display it
+                    res_array = [[[int(i[0]), int(i[1])]] for i in zip(x_new,y_new)]
+                    smoothened.append(np.asarray(res_array, dtype=np.int32))
 
-                        
-                        # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.interpolate.splev.html
-                        x_new, y_new = splev(u_new, tck, der=0)
-                        # Convert it back to numpy format for opencv to be able to display it
-                        res_array = [[[int(i[0]), int(i[1])]] for i in zip(x_new,y_new)]
-                        smoothened.append(np.asarray(res_array, dtype=np.int32))
+                #Smooth the conoturs and store them
+                prediction[:] = 0  
+                cv2.drawContours(prediction, smoothened, 0, (255,255,255),-1)
+                output_mask_path = os.path.join(self.OUTPUT_MASKS_DIRECTORY, f"slice_{self.image_angle:.6f}.png")
 
-                    #Smooth the conoturs and store them
-                    prediction[:] = 0  
-                    cv2.drawContours(prediction, smoothened, 0, (255,255,255),-1)
-                    output_mask_path = os.path.join(self.OUTPUT_MASKS_DIRECTORY, f"slice_{self.image_angle:.6f}.png")
+                
+                if self.start_recording:
+                     output_path_original_image= os.path.join(self.INPUT_IMAGES_DIRECTORY, f"original_{self.image_angle:.6f}.png")
+                     cv2.imwrite(output_path_original_image, self.cv2_image)
 
+                     
+                #Show only the biggest contour
+                cv2.drawContours(self.cv2_image, smoothened, 0, (255,255,255),3)
+                if len(smoothened) > 0:
+                    x,y,w,h = cv2.boundingRect(smoothened[0])
+                    #cv2.rectangle(self.cv2_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.circle(self.cv2_image, (int(x + w/2), int(y + h/2)), 5, (0, 0, 255), -1)
+                    cv2.circle(self.cv2_image, (int(self.cv2_image.shape[1]/2), int(self.cv2_image.shape[0]/2)), 10, (255, 0, 0), 2)
+
+                    self.position_publisher.publish(Float32(data=(self.cv2_image.shape[1]/2 - (x + w/2))/12))
+                    self.get_logger().info(f'Distance: {self.cv2_image.shape[1]/2 - (x + w/2):.2f} px')
+                else:
+                    self.position_publisher.publish(Float32(data=0.0))
+                cv2.imshow("Segmentation", self.cv2_image)
+                output_segmentation_path = os.path.join(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f"segmentation_{self.image_angle:.6f}.png")
+                
+
+                
+                
+
+                end_time = time.time()
+                inference_time = end_time - start_time
+                self.get_logger().info(f'Inference time: {inference_time:.6f}')
+                #self.get_logger().info(f'Angle: {self.image_angle:.10f}')
+                if self.start_recording == True:
                     cv2.imwrite(output_mask_path, prediction)
-
-                    #Show only the biggest contour
-                    cv2.drawContours(self.cv2_image, smoothened, 0, (255,255,255),3)
-                    cv2.imshow("Segmentation", self.cv2_image)
-                    output_segmentation_path = os.path.join(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f"segmentation_{self.image_angle:.6f}.png")
                     cv2.imwrite(output_segmentation_path, self.cv2_image)
-
-                    output_path_original_image= os.path.join(self.INPUT_IMAGES_DIRECTORY, f"original_{self.image_angle:.6f}.png")
-                    cv2.imwrite(output_path_original_image, self.cv2_image)
-
-                    end_time = time.time()
-                    inference_time = end_time - start_time
-                    self.get_logger().info(f'Inference time: {inference_time:.6f}')
-                    #self.get_logger().info(f'Angle: {self.image_angle:.10f}')
-                    cv2.waitKey(1)
+                cv2.waitKey(1)
 
     def response_callback(self, future):
             self.future_flag = False

@@ -134,8 +134,8 @@ class SweepNode(Node):
                 self.get_logger().info('Sweep finished, stoping subscription')
                 self.destroy_subscription(self.img_sub)
                 return
-            self.get_logger().info('Slice angle = {}'.format(msg.angle))
-            self.get_logger().info('Force applied = {}'.format(math.sqrt(self.wrench.wrench.force.y**2 + self.wrench.wrench.force.z**2)))
+            #self.get_logger().info('Slice angle = {}'.format(msg.angle))
+            #self.get_logger().info('Force applied = {}'.format(math.sqrt(self.wrench.wrench.force.y**2 + self.wrench.wrench.force.z**2)))
 
             # get current value of rotation around probe's axis
             # pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())

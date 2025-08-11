@@ -3,6 +3,7 @@ import rclpy.action
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
 from rclpy.callback_groups import ReentrantCallbackGroup
+from std_msgs.msg import Float32
 from geometry_msgs.msg import WrenchStamped, TwistStamped
 from rcl_interfaces.msg import SetParametersResult
 
@@ -37,7 +38,7 @@ class ForceCompensationNode(Node):
         super().__init__('force_compensation_node')
 
         self.pub_sub_cbg = ReentrantCallbackGroup()
-        self.data_logger = open('/home/matija/KUKA_LBRMed_servoing/logs/force_compensation.log', 'w')
+        self.data_logger = open('/home/racunalo/KUKA_LBRMed_servoing/logs/force_compensation.log', 'w')
 
 
         # Only declare parameters for phi and theta PIDs (dynamic)
@@ -49,8 +50,8 @@ class ForceCompensationNode(Node):
         self.declare_parameter('1/theta_Kd', 0.0)
 
         # Fixed values for y/z PID
-        self.Kp = 1/12
-        self.Ki = 1/50
+        self.Kp = 1/24
+        self.Ki = 1/100
         self.Kd = 0.0
 
         # Get initial values for phi/theta PIDs
@@ -68,12 +69,16 @@ class ForceCompensationNode(Node):
 
         self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.twist_sub = self.create_subscription(TwistStamped,'/twist_cmd',self.twist_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.image_sub = self.create_subscription(Float32,'/axial_position',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         self.twist_cmd = TwistStamped()
+        self.axial_twist = 0.0
+
 
         T = 1/200
+        self.xPID = PID(0.2, 0, 0, 1/23)
         self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.zPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
@@ -107,12 +112,16 @@ class ForceCompensationNode(Node):
                 self.theta_PID.kd = self.theta_Kd
         return SetParametersResult(successful=True)
 
+    def image_cb(self, msg: Float32):
+        self.get_logger().info('Image position: {}'.format(msg.data))
+        self.axial_twist = self.xPID.update(msg.data)
+
     def ft_callback(self, msg: WrenchStamped):
         #self.get_logger().info('Force: {}'.format(msg.wrench.force.y))
         msg_out = TwistStamped()
         msg_out.header = msg.header
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
-        msg_out.twist.linear.x = self.twist_cmd.twist.linear.x
+        msg_out.twist.linear.x = self.axial_twist
         msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 2) + self.twist_cmd.twist.linear.y)
         msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
         msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
@@ -121,8 +130,8 @@ class ForceCompensationNode(Node):
         M_z = msg.wrench.torque.z + msg.wrench.force.x * 0.06569 - msg.wrench.force.y * 0.33849
 
         self.get_logger().info('Moment: measured: {}, corrected: {},  Force : {}'.format(msg.wrench.torque.z, M_z,msg.wrench.force.y), throttle_duration_sec=0.5)
-        # msg_out.twist.angular.y = saturation(self.phi_PID.update(M_y) + self.twist_cmd.twist.angular.y)
-        # msg_out.twist.angular.z = saturation(self.theta_PID.update(M_z) + self.twist_cmd.twist.angular.z)
+        # msg_out.twist.angular.y = saturation(self.phi_PID.update(M_y*4/3) + self.twist_cmd.twist.angular.y)
+        # msg_out.twist.angular.z = saturation(self.theta_PID.update(M_z*4/3) + self.twist_cmd.twist.angular.z)
 
         self.data_logger.write('WrenchStamped: {} \t Corrected Moment: {}, {}\n'.format(msg, M_y, M_z))
 
