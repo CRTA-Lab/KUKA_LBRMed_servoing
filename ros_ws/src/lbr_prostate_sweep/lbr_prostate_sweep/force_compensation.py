@@ -50,7 +50,7 @@ class ForceCompensationNode(Node):
         self.declare_parameter('1/theta_Kd', 0.0)
 
         # Fixed values for y/z PID
-        self.Kp = 1/24
+        self.Kp = 1/30
         self.Ki = 1/100
         self.Kd = 0.0
 
@@ -78,7 +78,7 @@ class ForceCompensationNode(Node):
 
 
         T = 1/200
-        self.xPID = PID(0.2, 0, 0, 1/23)
+        self.xPID = PID(0.012, 0, 0.002, 1/16)
         self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.zPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
@@ -115,14 +115,14 @@ class ForceCompensationNode(Node):
     def image_cb(self, msg: Float32):
         self.get_logger().info('Image position: {}'.format(msg.data))
         self.axial_twist = self.xPID.update(msg.data)
-
+        
     def ft_callback(self, msg: WrenchStamped):
         #self.get_logger().info('Force: {}'.format(msg.wrench.force.y))
         msg_out = TwistStamped()
         msg_out.header = msg.header
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
         msg_out.twist.linear.x = self.axial_twist
-        msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 2) + self.twist_cmd.twist.linear.y)
+        msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 6) + self.twist_cmd.twist.linear.y)
         msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
         msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
 

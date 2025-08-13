@@ -30,24 +30,13 @@ class ImageAquisition(Node):
         # start publisher for US image
         self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default)
 
-        # self.create_subscription(JointState, '/lbr/joint_states', self.joint_state_callback, qos_profile_system_default)
-        # self.joint_state_pub = self.create_publisher(JointState, '/joint_states', qos_profile_system_default)
-
+        
         # timer for periodicaly captureing the image from US
         self.create_timer(1/23,self.get_image)
 
         # connecting to the US
         self.cap = cv2.VideoCapture(0)
         
-        return
- 
-    def joint_state_callback(self, msg: JointState):
-        '''Callback function for the joint state subscriber
-        Args : self, msg - JointState message
-        Returns: None
-        '''
-        # publishing the joint states to the topic
-        self.joint_state_pub.publish(msg)
         return
 
     def get_image(self):
