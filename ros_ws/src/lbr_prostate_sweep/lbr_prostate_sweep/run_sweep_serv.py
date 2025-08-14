@@ -96,21 +96,25 @@ class SweepNode(Node):
 
 
     def broadcast_init_pose(self):
+        '''Method for broadcasting the initial pose of the robot on the tf tree
+        Args : self
+        Out: None
+        '''
         if self.init_pose != None:
             pose = self.init_pose
             pose.header.stamp = self.get_clock().now().to_msg()
             self.tf_broadcaster.sendTransform(pose)
 
-            if self.start_flag:
-                msg_out = TwistStamped()
-                if self.back_flag:
-                    msg_out.twist.angular.x = -1.0
-                else:
-                    msg_out.twist.angular.x = 1.0
-                #msg_out.twist.linear.x = 0.6
-                msg_out.header.stamp = self.get_clock().now().to_msg()
-                #msg_out.header.frame_id = self.TCP_frame
-                self.twist_pub.publish(msg_out)
+            # if self.start_flag:
+            #     msg_out = TwistStamped()
+            #     if self.back_flag:
+            #         msg_out.twist.angular.x = -1.0
+            #     else:
+            #         msg_out.twist.angular.x = 1.0
+            #     #msg_out.twist.linear.x = 0.6
+            #     msg_out.header.stamp = self.get_clock().now().to_msg()
+            #     #msg_out.header.frame_id = self.TCP_frame
+            #     self.twist_pub.publish(msg_out)
 
 
         return
@@ -137,35 +141,19 @@ class SweepNode(Node):
             #self.get_logger().info('Slice angle = {}'.format(msg.angle))
             #self.get_logger().info('Force applied = {}'.format(math.sqrt(self.wrench.wrench.force.y**2 + self.wrench.wrench.force.z**2)))
 
-            # get current value of rotation around probe's axis
-            # pose = self.tf_buffer.lookup_transform(self.TCP_frame,self.base_frame,rclpy.time.Time())
-            # pose = Rotation.from_quat([pose.transform.rotation.x, pose.transform.rotation.y, pose.transform.rotation.z, pose.transform.rotation.w]).as_euler('ZYX',degrees=True)[2]
-            # pose += 360
-
-            # # calcluate the distance from initial position
-            # delta = min(abs(pose - self.init_pose),360-abs(pose - self.init_pose))
-            # self.get_logger().info('Delta = {}'.format(delta))
-            
-            # # check if angle is in +/- 35 deg range and flip rotation if it is not
-            # # TODO remove hard stop angles and stop when end of prostate is reached
-            # if delta > 35 and self.zcf:
-            #     self.back_flag = not self.back_flag
-            #     self.zcf = False
-            # elif delta < -35:
-            #     self.zcf = True
 
             # create and publish msg
-            # msg_out = TwistStamped()
-            # if self.back_flag:
-            #     msg_out.twist.angular.x = -1.0
-            # else:
-            #     msg_out.twist.angular.x = 1.0
-            # #msg_out.twist.linear.x = 0.6
-            # msg_out.header.stamp = self.get_clock().now().to_msg()
-            # #msg_out.header.frame_id = self.TCP_frame
-            # self.twist_pub.publish(msg_out)
+            msg_out = TwistStamped()
+            if self.back_flag:
+                msg_out.twist.angular.x = -1.0
+            else:
+                msg_out.twist.angular.x = 1.0
+            #msg_out.twist.linear.x = 0.6
+            msg_out.header.stamp = self.get_clock().now().to_msg()
+            #msg_out.header.frame_id = self.TCP_frame
+            self.twist_pub.publish(msg_out)
 
-        # if position was not initialized, check if ther is valid position data and initialize the 
+        # if position was not initialized, check if there is valid position data and initialize
         elif msg.angle != float('inf'):
             self.get_logger().info('Inicijalizacija')
             self.initialize_pose()

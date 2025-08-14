@@ -8,13 +8,24 @@ from geometry_msgs.msg import WrenchStamped, TwistStamped
 from rcl_interfaces.msg import SetParametersResult
 
 def saturation(value, limit = 1):
+    '''Saturates the value to the specified limit.
+    Args:        value (float): The value to be saturated.
+                 limit (float): The saturation limit.
+    Returns:     float: The saturated value.'''
     if abs(value) > limit:
         return limit * (value / abs(value))
     return value
 
 
 class PID():
+    '''A simple discreet PID controller class.'''
     def __init__(self,Kp,Ki,Kd,T):
+        '''Initializes the PID controller with the specified parameters
+        Args:        Kp (float): proportional gain
+                     Ki (float): integral gain
+                     Kd (float): derivative gain
+                     T (float): sample time
+        Returns:     None'''
         self.kp = Kp
         self.ki = Ki
         self.kd = Kd
@@ -24,16 +35,24 @@ class PID():
         return
     
     def update(self,error):
-        self.integral += error*self.T
-        self.integral = saturation(self.integral,1)
-        diff = (error-self.prev)/self.T
+        '''Updates the PID controller with the controlled value error.
+        Args:        error (float): new error value
+        Returns:     float: control output'''
 
+        # discrete integral
+        self.integral += error*self.T
+        # saturating the value for anti-windup
+        self.integral = saturation(self.integral,1)
+
+        # discrete derivative
+        diff = (error-self.prev)/self.T
         self.prev = error
 
         controll = self.kp*error + self.ki*self.integral + self.kd*diff
         return controll
 
 class ForceCompensationNode(Node):
+    '''Node for force compensation using PID control.'''
     def __init__(self):
         super().__init__('force_compensation_node')
 
@@ -41,18 +60,13 @@ class ForceCompensationNode(Node):
         self.data_logger = open('/home/racunalo/KUKA_LBRMed_servoing/logs/force_compensation.log', 'w')
 
 
-        # Only declare parameters for phi and theta PIDs (dynamic)
+        # declare parameters for phi and theta PIDs (dynamic) (writen by copilot)
         self.declare_parameter('1/phi_Kp', 3.0)
         self.declare_parameter('1/phi_Ki', 20.0)
         self.declare_parameter('1/phi_Kd', 0.0)
         self.declare_parameter('1/theta_Kp', 3.0)
         self.declare_parameter('1/theta_Ki', 20.0)
         self.declare_parameter('1/theta_Kd', 0.0)
-
-        # Fixed values for y/z PID
-        self.Kp = 1/30
-        self.Ki = 1/100
-        self.Kd = 0.0
 
         # Get initial values for phi/theta PIDs
         self.phi_Kp = 1/self.get_parameter('1/phi_Kp').get_parameter_value().double_value
@@ -67,16 +81,24 @@ class ForceCompensationNode(Node):
 
         self.add_on_set_parameters_callback(self.param_callback)
 
+        # Fixed values for y/z PID
+        self.Kp = 1/30
+        self.Ki = 1/100
+        self.Kd = 0.0
+
+
+        # create subscribers and publishers
         self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.twist_sub = self.create_subscription(TwistStamped,'/twist_cmd',self.twist_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.image_sub = self.create_subscription(Float32,'/axial_position',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
+        # initialize variables
         self.twist_cmd = TwistStamped()
         self.axial_twist = 0.0
 
-
+        # initialize PID controllers
         T = 1/200
         self.xPID = PID(0.012, 0, 0.002, 1/16)
         self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
@@ -85,6 +107,9 @@ class ForceCompensationNode(Node):
         self.theta_PID = PID(self.theta_Kp, self.theta_Ki, self.theta_Kd, T)
 
     def param_callback(self, params):
+        '''Callback for dynamic parameter changes. (written by copilots)
+        Args:        params (list): list of changed parameters
+        Returns:     SetParametersResult: result of the callback'''
         for param in params:
             if param.name == '1/phi_Kp':
                 self.phi_Kp = 1/param.value
@@ -113,10 +138,19 @@ class ForceCompensationNode(Node):
         return SetParametersResult(successful=True)
 
     def image_cb(self, msg: Float32):
+        '''Callback for the position calculated from image subscriber.
+        Args:        msg (Float32): message containing the position of prostate from img
+        Returns:     None'''
         self.get_logger().info('Image position: {}'.format(msg.data))
         self.axial_twist = self.xPID.update(msg.data)
-        
+        return
+    
+
     def ft_callback(self, msg: WrenchStamped):
+        '''Callback for the force-torque sensor data.
+        Args:        msg (WrenchStamped): message containing the force-torque data
+        Returns:     None'''
+
         #self.get_logger().info('Force: {}'.format(msg.wrench.force.y))
         msg_out = TwistStamped()
         msg_out.header = msg.header
@@ -138,6 +172,9 @@ class ForceCompensationNode(Node):
         self.twist_pub.publish(msg_out)
     
     def twist_cb(self,msg: TwistStamped):
+        '''Callback for forwarding other twist commands.
+        Args:        msg (TwistStamped): message containing the twist command
+        Returns:     None'''
         self.twist_cmd = msg
         return
 
