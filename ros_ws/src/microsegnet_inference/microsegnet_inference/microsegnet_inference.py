@@ -86,7 +86,7 @@ class MicrosegnetNode(Node):
         self.angle=None
 
         #TODO: Vratit na False
-        self.segmenation_start=True
+        self.segmenation_start=False
 
         #Blank annotation counter - for switching the sweep orientation
         self.blank_images_counter=0
@@ -127,7 +127,7 @@ class MicrosegnetNode(Node):
 
         #Check if the image_angle is different to the stored angle (if they are the same, it is the same image)
         # TODO: Remove or True when done testing
-        if self.image_angle != self.angle or True:
+        if self.image_angle != self.angle:
             self.angle = self.image_angle
             #print(type(self.angle),flush=True)
             self.image= cv2.cvtColor(self.cv2_image, cv2.COLOR_BGR2GRAY)
@@ -211,38 +211,38 @@ class MicrosegnetNode(Node):
                 #Find contours on predicted masks (used for visualization)
                 contours, hierarchy = cv2.findContours(prediction,cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 #Smooth the contours
-                smoothened = []
+                #smoothened = []
                 CURVE_THRESHOLD = 0.018 # Threshold for curvature filtering
 
-                for contour in contours:
+                # for contour in contours:
                     
-                    # Compute perimeter
-                    perimeter = cv2.arcLength(contour, closed=True)
+                #     # Compute perimeter
+                #     perimeter = cv2.arcLength(contour, closed=True)
 
-                    # Approximate polygon and check deviation
-                    approx = cv2.approxPolyDP(contour, epsilon=CURVE_THRESHOLD * perimeter, closed=True)
-                    if len(approx) > 10:  # You can tweak this threshold
-                        continue
+                #     # Approximate polygon and check deviation
+                #     approx = cv2.approxPolyDP(contour, epsilon=CURVE_THRESHOLD * perimeter, closed=True)
+                #     if len(approx) > 10:  # You can tweak this threshold
+                #         continue
 
-                    x_1,y_1 = contour.T
-                    # Convert from numpy arrays to normal arrays
-                    x_1 = x_1.tolist()[0]
-                    y_1 = y_1.tolist()[0]
-                    # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.interpolate.splprep.html
-                    tck, u = splprep([x_1,y_1], u=None, s=0.0, k=1, per=1)
-                    # https://docs.scipy.org/doc/numpy-1.10.1/reference/generated/numpy.linspace.html
-                    u_new = np.linspace(u.min(), u.max(), 100)
+                #     x_1,y_1 = contour.T
+                #     # Convert from numpy arrays to normal arrays
+                #     x_1 = x_1.tolist()[0]
+                #     y_1 = y_1.tolist()[0]
+                #     # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.interpolate.splprep.html
+                #     tck, u = splprep([x_1,y_1], u=None, s=0.0, k=1, per=1)
+                #     # https://docs.scipy.org/doc/numpy-1.10.1/reference/generated/numpy.linspace.html
+                #     u_new = np.linspace(u.min(), u.max(), 100)
 
                     
-                    # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.interpolate.splev.html
-                    x_new, y_new = splev(u_new, tck, der=0)
-                    # Convert it back to numpy format for opencv to be able to display it
-                    res_array = [[[int(i[0]), int(i[1])]] for i in zip(x_new,y_new)]
-                    smoothened.append(np.asarray(res_array, dtype=np.int32))
+                #     # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.interpolate.splev.html
+                #     x_new, y_new = splev(u_new, tck, der=0)
+                #     # Convert it back to numpy format for opencv to be able to display it
+                #     res_array = [[[int(i[0]), int(i[1])]] for i in zip(x_new,y_new)]
+                #     smoothened.append(np.asarray(res_array, dtype=np.int32))
 
                 #Smooth the conoturs and store them
                 prediction[:] = 0  
-                cv2.drawContours(prediction, smoothened, 0, (255,255,255),-1)
+                cv2.drawContours(prediction, contours, 0, (255,255,255),-1)
                 output_mask_path = os.path.join(self.OUTPUT_MASKS_DIRECTORY, f"slice_{self.image_angle:.6f}.png")
 
                 
@@ -252,9 +252,9 @@ class MicrosegnetNode(Node):
 
                      
                 #Show only the biggest contour
-                cv2.drawContours(self.cv2_image, smoothened, 0, (255,255,255),3)
-                if len(smoothened) > 0:
-                    x,y,w,h = cv2.boundingRect(smoothened[0])
+                cv2.drawContours(self.cv2_image, contours, 0, (255,255,255),3)
+                if len(contours) > 0:
+                    x,y,w,h = cv2.boundingRect(contours[0])
                     #cv2.rectangle(self.cv2_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
                     cv2.circle(self.cv2_image, (int(x + w/2), int(y + h/2)), 5, (0, 0, 255), -1)
                     cv2.circle(self.cv2_image, (int(self.cv2_image.shape[1]/2), int(self.cv2_image.shape[0]/2)), 10, (255, 0, 0), 2)
