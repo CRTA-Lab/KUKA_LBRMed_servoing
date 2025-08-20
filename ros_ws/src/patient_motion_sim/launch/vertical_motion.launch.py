@@ -10,8 +10,15 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 import os
+import glob
 
 def generate_launch_description():
+
+    dir = '/home/racunalo/KUKA_LBRMed_servoing/logs/'
+    files = list(filter(os.path.isdir, glob.glob(dir + '*')))
+    files.sort(key=os.path.getmtime, reverse=True)
+    log_dir = files[0] if len(files) > 0 else dir
+
     namespace_launch_arg = DeclareLaunchArgument(
         'namespace',
         default_value='',
@@ -59,6 +66,7 @@ def generate_launch_description():
         package='patient_motion_sim',
         executable='vertical_motion',
         output='log',
+        parameters=[{'data_logger_path': log_dir}],
     )
 
     ])

@@ -10,8 +10,14 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 import os
+import time
 
 def generate_launch_description():
+
+
+    log_dir = '/home/racunalo/KUKA_LBRMed_servoing/logs/{}/'.format(time.strftime("%Y-%m-%d_%H-%M-%S"))
+    os.mkdir(log_dir)
+
     namespace_launch_arg = DeclareLaunchArgument(
         'namespace',
         default_value='',
@@ -69,6 +75,7 @@ def generate_launch_description():
         package='lbr_prostate_sweep',
         executable='run_sweep_serv',
         output='log',
+        parameters=[{'data_logger_path': log_dir}],
     )
 
     ])
@@ -91,6 +98,7 @@ def generate_launch_description():
         package='lbr_prostate_sweep',
         executable='force_compensation',
         output='log',
+        parameters=[{'data_logger_path': log_dir}]
     )
 
     ])

@@ -22,6 +22,12 @@ class SweepNode(Node):
     def __init__(self):
         super().__init__('SweepNode')
 
+        self.declare_parameter('data_logger_path', '/home/racunalo/KUKA_LBRMed_servoing/logs/')
+        data_logger_path = self.get_parameter('data_logger_path').get_parameter_value().string_value
+        self.get_logger().info(f'Logging data to: {data_logger_path}')
+
+        self.data_logger = open(data_logger_path+'position.log', 'w')
+
         # start CvBridge for converting between images and ros msgs
         self.bridge = CvBridge()
         self.pub_sub_cbg = ReentrantCallbackGroup()
@@ -62,6 +68,9 @@ class SweepNode(Node):
 
     def ft_callback(self,msg:WrenchStamped):
         self.wrench = msg
+        if self.init_pose != None:
+            pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
+            self.data_logger.write('TransformStamped: {}\n'.format(pose))
         return
 
     def sweep_start(self,request:Trigger.Request,response:Trigger.Response):

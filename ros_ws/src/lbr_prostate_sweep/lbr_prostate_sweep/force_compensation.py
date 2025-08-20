@@ -57,7 +57,12 @@ class ForceCompensationNode(Node):
         super().__init__('force_compensation_node')
 
         self.pub_sub_cbg = ReentrantCallbackGroup()
-        self.data_logger = open('/home/racunalo/KUKA_LBRMed_servoing/logs/force_compensation.log', 'w')
+
+        self.declare_parameter('data_logger_path', '/home/racunalo/KUKA_LBRMed_servoing/logs/')
+        data_logger_path = self.get_parameter('data_logger_path').get_parameter_value().string_value
+        self.get_logger().info(f'Logging data to: {data_logger_path}')
+
+        self.data_logger = open(data_logger_path+'force_compensation.log', 'w')
 
 
         # declare parameters for phi and theta PIDs (dynamic) (writen by copilot)
@@ -82,8 +87,8 @@ class ForceCompensationNode(Node):
         self.add_on_set_parameters_callback(self.param_callback)
 
         # Fixed values for y/z PID
-        self.Kp = 1/30
-        self.Ki = 1/100
+        self.Kp = 1/20
+        self.Ki = 1/80
         self.Kd = 0.0
 
 
