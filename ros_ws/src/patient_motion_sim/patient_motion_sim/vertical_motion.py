@@ -34,11 +34,12 @@ class VerticalMotion(Node):
         msg = TwistStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
         time = msg.header.stamp.sec + msg.header.stamp.nanosec*(10**(-9))
-        msg.twist.linear.z = math.cos(time)*0.3
+        msg.twist.linear.z = math.cos(time)*((time/math.pi)%1>0.5)*0.5
         self.twist_pub.publish(msg)
-        try:
+        try: 
             pose = self.tf_buffer.lookup_transform('lbr_link_0','lbr_link_ee',rclpy.time.Time())
-            self.data_logger.write('TransformStamped: {}\n'.format(pose))
+            self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}, {}\n'.format(pose.header.stamp.sec,pose.header.stamp.nanosec,pose.transform.translation.x,pose.transform.translation.y,pose.transform.translation.z,
+                                                                            pose.transform.rotation.x,pose.transform.rotation.y,pose.transform.rotation.z,pose.transform.rotation.w))
         except Exception as e:
             self.get_logger().error(f'Error looking up transform: {e}')
 

@@ -2,7 +2,7 @@ import rclpy
 import rclpy.action
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
 from tf2_ros.buffer import Buffer
 from tf2_ros import TransformListener, TransformBroadcaster
 from custom_interfaces.msg import ImageMeta
@@ -36,7 +36,7 @@ class SweepNode(Node):
         # create subscription on the US_image topic
         self.img_sub = self.create_subscription(ImageMeta,'/US_image',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         # create subscription on the wrench topic 
-        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=MutuallyExclusiveCallbackGroup())
 
         # create publisher for moveit servo delta_twist_cmds topic
         #self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
@@ -70,7 +70,8 @@ class SweepNode(Node):
         self.wrench = msg
         if self.init_pose != None:
             pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
-            self.data_logger.write('TransformStamped: {}\n'.format(pose))
+            self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}, {}\n'.format(pose.header.stamp.sec,pose.header.stamp.nanosec,pose.transform.translation.x,pose.transform.translation.y,pose.transform.translation.z,
+                                                                pose.transform.rotation.x,pose.transform.rotation.y,pose.transform.rotation.z,pose.transform.rotation.w))
         return
 
     def sweep_start(self,request:Trigger.Request,response:Trigger.Response):
