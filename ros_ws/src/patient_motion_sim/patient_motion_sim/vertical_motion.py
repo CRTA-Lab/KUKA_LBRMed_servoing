@@ -30,10 +30,12 @@ class VerticalMotion(Node):
     def timer_cb(self):
         if self.i < 100:
             self.i += 1
+            time = self.get_clock().now().to_msg()
+            self.init_time = time.sec + time.nanosec*(10**(-9))
             return
         msg = TwistStamped()
         msg.header.stamp = self.get_clock().now().to_msg()
-        time = msg.header.stamp.sec + msg.header.stamp.nanosec*(10**(-9))
+        time = (msg.header.stamp.sec + msg.header.stamp.nanosec*(10**(-9)))-self.init_time + math.pi/4
         msg.twist.linear.z = math.cos(time)*((time/math.pi)%1>0.5)*0.5
         self.twist_pub.publish(msg)
         try: 
