@@ -246,7 +246,7 @@ class MicrosegnetNode(Node):
                 output_mask_path = os.path.join(self.OUTPUT_MASKS_DIRECTORY, f"slice_{self.image_angle:.6f}.png")
 
                 
-                if self.start_recording:
+                if self.start_recording and msg.force_in_range:
                      output_path_original_image= os.path.join(self.INPUT_IMAGES_DIRECTORY, f"original_{self.image_angle:.6f}.png")
                      cv2.imwrite(output_path_original_image, self.cv2_image)
 
@@ -260,7 +260,7 @@ class MicrosegnetNode(Node):
                     cv2.circle(self.cv2_image, (int(self.cv2_image.shape[1]/2), int(self.cv2_image.shape[0]/2)), 10, (255, 0, 0), 2)
 
                     self.position_publisher.publish(Float32(data=(self.cv2_image.shape[1]/2 - (x + w/2))/12))
-                    self.get_logger().info(f'Distance: {self.cv2_image.shape[1]/2 - (x + w/2):.2f} px')
+                    #self.get_logger().info(f'Distance: {self.cv2_image.shape[1]/2 - (x + w/2):.2f} px')
                 else:
                     self.position_publisher.publish(Float32(data=0.0))
                 cv2.imshow("Segmentation", self.cv2_image)
@@ -274,7 +274,7 @@ class MicrosegnetNode(Node):
                 inference_time = end_time - start_time
                 self.get_logger().info(f'Inference time: {inference_time:.6f}')
                 #self.get_logger().info(f'Angle: {self.image_angle:.10f}')
-                if self.start_recording == True:
+                if self.start_recording and msg.force_in_range:
                     cv2.imwrite(output_mask_path, prediction)
                     cv2.imwrite(output_segmentation_path, self.cv2_image)
                 cv2.waitKey(1)

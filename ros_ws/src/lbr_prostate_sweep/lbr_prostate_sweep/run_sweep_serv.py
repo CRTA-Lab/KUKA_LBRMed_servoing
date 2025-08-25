@@ -154,7 +154,9 @@ class SweepNode(Node):
 
             # create and publish msg
             msg_out = TwistStamped()
-            if self.back_flag:
+            if not msg.force_in_range:
+                msg_out.twist.angular.x = 0.0
+            elif self.back_flag:
                 msg_out.twist.angular.x = -1.0
             else:
                 msg_out.twist.angular.x = 1.0

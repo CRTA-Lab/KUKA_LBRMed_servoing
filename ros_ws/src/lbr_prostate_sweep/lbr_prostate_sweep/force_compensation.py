@@ -87,9 +87,19 @@ class ForceCompensationNode(Node):
         self.add_on_set_parameters_callback(self.param_callback)
 
         # Fixed values for y/z PID
-        self.Kp = 1/20
-        self.Ki = 1/80
-        self.Kd = 0.0
+
+        self.declare_parameter('1/Kp', 25.0)
+        self.declare_parameter('1/Ki', 100)
+        self.declare_parameter('1/Kd', 0.0)
+
+        self.Kp = 1/self.get_parameter('1/Kp').get_parameter_value().double_value
+        self.Ki = 1/self.get_parameter('1/Ki').get_parameter_value().double_value
+        Kd_val = self.get_parameter('1/Kd').get_parameter_value().double_value
+        self.Kd = 0.0 if Kd_val == 0.0 else 1/Kd_val
+        
+        # self.Kp = 1/25
+        # self.Ki = 0.0
+        # self.Kd = 0.0
 
 
         # create subscribers and publishers
@@ -112,7 +122,7 @@ class ForceCompensationNode(Node):
         self.theta_PID = PID(self.theta_Kp, self.theta_Ki, self.theta_Kd, T)
 
     def param_callback(self, params):
-        '''Callback for dynamic parameter changes. (written by copilots)
+        '''Callback for dynamic parameter changes. (written by copilot)
         Args:        params (list): list of changed parameters
         Returns:     SetParametersResult: result of the callback'''
         for param in params:
@@ -140,13 +150,23 @@ class ForceCompensationNode(Node):
                 else:
                     self.theta_Kd = 1/param.value
                 self.theta_PID.kd = self.theta_Kd
+            elif param.name == '1/Kp':
+                self.Kp = 1/param.value
+            elif param.name == '1/Ki':
+                self.Ki = 1/param.value
+            elif param.name == '1/Kd':
+                if param.value == 0.0:
+                    self.Kd = 0.0
+                else:
+                    self.Kd = 1/param.value
+
         return SetParametersResult(successful=True)
 
     def image_cb(self, msg: Float32):
         '''Callback for the position calculated from image subscriber.
         Args:        msg (Float32): message containing the position of prostate from img
         Returns:     None'''
-        self.get_logger().info('Image position: {}'.format(msg.data))
+        #self.get_logger().info('Image position: {}'.format(msg.data))
         self.axial_twist = self.xPID.update(msg.data)
         return
     
@@ -160,8 +180,8 @@ class ForceCompensationNode(Node):
         msg_out = TwistStamped()
         msg_out.header = msg.header
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
-        msg_out.twist.linear.x = self.axial_twist
-        msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 6) + self.twist_cmd.twist.linear.y)
+        #msg_out.twist.linear.x = self.axial_twist
+        msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 7) + self.twist_cmd.twist.linear.y)
         msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
         msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
 
@@ -172,7 +192,9 @@ class ForceCompensationNode(Node):
         # msg_out.twist.angular.y = saturation(self.phi_PID.update(M_y*4/3) + self.twist_cmd.twist.angular.y)
         # msg_out.twist.angular.z = saturation(self.theta_PID.update(M_z*4/3) + self.twist_cmd.twist.angular.z)
 
-        self.data_logger.write('WrenchStamped: {} \t Corrected Moment: {}, {}\n'.format(msg, M_y, M_z))
+        self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}\n'.format(msg.header.stamp.sec,msg.header.stamp.nanosec,
+                                                                                                    msg.wrench.force.x,msg.wrench.force.y,msg.wrench.force.z,
+                                                                                                    msg.wrench.torque.x,msg.wrench.torque.y,msg.wrench.torque.z,))
 
         self.twist_pub.publish(msg_out)
     

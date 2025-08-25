@@ -6,7 +6,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.qos import qos_profile_system_default
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener 
-from geometry_msgs.msg import Vector3Stamped
+from geometry_msgs.msg import Vector3Stamped, WrenchStamped
 from sensor_msgs.msg import JointState
 from custom_interfaces.msg import ImageMeta
 from sensor_msgs.msg import Image
@@ -27,17 +27,35 @@ class ImageAquisition(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # start publisher for US image
-        self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default)
+        self.pub_sub_cbg = ReentrantCallbackGroup()
 
-        
+        # start publisher for US image
+        self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+
         # timer for periodicaly captureing the image from US
         self.create_timer(1/23,self.get_image)
+
+        self.force_in_range = False
 
         # connecting to the US
         self.cap = cv2.VideoCapture(0)
         
         return
+
+
+    def ft_callback(self, msg: WrenchStamped):
+        '''Callback for the force-torque sensor data.
+        Args:        msg (WrenchStamped): message containing the force-torque data
+        Returns:     None'''
+        if 6.5 < msg.wrench.force.y < 7.5:
+            self.force_in_range = True
+            return
+        else:
+            self.force_in_range = False
+            return
+
+
 
     def get_image(self):
         '''Callback function for the image capture timer
@@ -94,6 +112,7 @@ class ImageAquisition(Node):
         msg = ImageMeta()
         msg.image = ros_image
         msg.angle = angle
+        msg.force_in_range = self.force_in_range
         self.img_pub.publish(msg)
         return
 
