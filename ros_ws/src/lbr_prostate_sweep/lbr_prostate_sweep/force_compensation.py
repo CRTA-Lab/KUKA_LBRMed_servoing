@@ -39,6 +39,9 @@ class PID():
         Args:        error (float): new error value
         Returns:     float: control output'''
 
+        if abs(error) < 0.1:
+            return 0.0
+
         # discrete integral
         self.integral += error*self.T
         # saturating the value for anti-windup
@@ -88,22 +91,32 @@ class ForceCompensationNode(Node):
 
         # Fixed values for y/z PID
 
-        # self.declare_parameter('1/Kp', 12.0)
-        # self.declare_parameter('1/Ki', 50.0)
-        # self.declare_parameter('1/Kd', 0.0)
+        self.Kp = 1/50
+        self.Ki = 1/100
+        self.Kd = 1/250
+
+
+        T = 1/200
+        self.xPID = PID(0.012, 0, 0.002, 1/16)
+        self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
+        self.zPID = PID(self.Kp, self.Ki, self.Kd, T)
+        self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
+        self.theta_PID = PID(self.theta_Kp, self.theta_Ki, self.theta_Kd, T)
+
+        self.declare_parameter('1/Kp', 40.0)
+        self.declare_parameter('1/Ki', 150.0)
+        self.declare_parameter('1/Kd', 0.0)
 
         # self.Kp = 1/self.get_parameter('1/Kp').get_parameter_value().double_value
         # self.Ki = 1/self.get_parameter('1/Ki').get_parameter_value().double_value
         # Kd_val = self.get_parameter('1/Kd').get_parameter_value().double_value
         # self.Kd = 0.0 if Kd_val == 0.0 else 1/Kd_val
         
-        self.Kp = 1/40
-        self.Ki = 1/150
-        self.Kd = 0.0
+        
 
 
         # create subscribers and publishers
-        self.ft_sub = self.create_subscription(WrenchStamped,'/wrench_smoothed',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.twist_sub = self.create_subscription(TwistStamped,'/twist_cmd',self.twist_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.image_sub = self.create_subscription(Float32,'/axial_position',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
@@ -114,13 +127,7 @@ class ForceCompensationNode(Node):
         self.axial_twist = 0.0
 
         # initialize PID controllers
-        T = 1/200
-        self.xPID = PID(0.012, 0, 0.002, 1/16)
-        self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
-        self.zPID = PID(self.Kp, self.Ki, self.Kd, T)
-        self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
-        self.theta_PID = PID(self.theta_Kp, self.theta_Ki, self.theta_Kd, T)
-
+        
     def param_callback(self, params):
         '''Callback for dynamic parameter changes. (written by copilot)
         Args:        params (list): list of changed parameters
@@ -152,13 +159,22 @@ class ForceCompensationNode(Node):
                 self.theta_PID.kd = self.theta_Kd
             elif param.name == '1/Kp':
                 self.Kp = 1/param.value
+                self.yPID.kp = self.Kp
+                self.zPID.kp = self.Kp
             elif param.name == '1/Ki':
-                self.Ki = 1/param.value
+                if param.value == 0.0:
+                    self.Ki = 0.0
+                else:
+                    self.Ki = 1/param.value
+                self.yPID.ki = self.Ki
+                self.zPID.ki = self.Ki
             elif param.name == '1/Kd':
                 if param.value == 0.0:
                     self.Kd = 0.0
                 else:
                     self.Kd = 1/param.value
+                self.yPID.kd = self.Kd
+                self.zPID.kd = self.Kd
 
         return SetParametersResult(successful=True)
 

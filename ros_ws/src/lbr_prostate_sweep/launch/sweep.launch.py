@@ -15,7 +15,7 @@ import time
 def generate_launch_description():
 
 
-    log_dir = '/home/racunalo/KUKA_LBRMed_servoing/logs/{}/'.format(time.strftime("%Y-%m-%d_%H-%M-%S"))
+    log_dir = '/home/matija/KUKA_LBRMed_servoing/logs/{}/'.format(time.strftime("%Y-%m-%d_%H-%M-%S"))
     os.mkdir(log_dir)
 
     namespace_launch_arg = DeclareLaunchArgument(

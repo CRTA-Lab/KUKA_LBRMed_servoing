@@ -9,7 +9,7 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import WrenchStamped
 from control_msgs.action import FollowJointTrajectory
 import numpy as np
-from scipy.signal import butter,sosfilt,sosfilt_zi
+from scipy.signal import butter,sosfilt,sosfilt_zi,sosfiltfilt
 
 
 class HelperNode(Node):
@@ -27,10 +27,10 @@ class HelperNode(Node):
         self.create_subscription(WrenchStamped, '/lbr/force_torque_broadcaster/wrench', self.wrench_callback, qos_profile_system_default,callback_group=cb_grup)
         self.wrench_pub = self.create_publisher(WrenchStamped, '/wrench_smoothed', qos_profile_system_default,callback_group=cb_grup)
 
-        self.data_window = np.zeros((1000,6))
-        self.filter = butter(1,5,btype='lowpass',output='sos',fs=200)
+        self.data_window = np.zeros((500,6))
+        self.filter = butter(3,0.25,btype='lowpass',output='sos',fs=200)
         zi = sosfilt_zi(self.filter)
-        zi = np.dstack((zi,zi,zi,zi,zi,zi))
+        self.zi = np.dstack((zi,zi,zi,zi,zi,zi))
 
         self.result = None
         
@@ -41,15 +41,20 @@ class HelperNode(Node):
         data = np.array([msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z, msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z])
         self.data_window = np.vstack((self.data_window[1:,:],data))
 
-        data = sosfilt(self.filter,self.data_window,axis=0)
-        msg_out = WrenchStamped()
-        msg_out.header = msg.header
-        msg_out.wrench.force.x = data[-1,0]
-        msg_out.wrench.force.y = data[-1,1]
-        msg_out.wrench.force.z = data[-1,2]
-        msg_out.wrench.torque.x = data[-1,3]
-        msg_out.wrench.torque.y = data[-1,4]
-        msg_out.wrench.torque.z = data[-1,5]
+        if not self.data_window[0,:].any():
+            msg_out = msg
+            self.get_logger().info('Filling filter window')
+        else:
+            
+            data = sosfiltfilt(self.filter,self.data_window,axis=0)
+            msg_out = WrenchStamped()
+            msg_out.header = msg.header
+            msg_out.wrench.force.x = data[-1,0]
+            msg_out.wrench.force.y = data[-1,1]
+            msg_out.wrench.force.z = data[-1,2]
+            msg_out.wrench.torque.x = data[-1,3]
+            msg_out.wrench.torque.y = data[-1,4]
+            msg_out.wrench.torque.z = data[-1,5]
         self.wrench_pub.publish(msg_out)
 
     def joint_state_callback(self, msg: JointState):
