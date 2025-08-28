@@ -46,7 +46,7 @@ class MicrosegnetNode(Node):
         future.add_done_callback(self.response_callback)
 
         #Microsegnet settings
-        self.MODEL_PATH="/home/racunalo/KUKA_LBRMed_servoing/ros_ws/cls_epoch_9.pth"
+        self.MODEL_PATH="/home/racunalo/KUKA_LBRMed_servoing/ros_ws/cls_epoch_19.pth"
         MAIN_DIRECTORY_NAME="/home/racunalo/KUKA_LBRMed_servoing/vtk/microsegnet"
         self.INPUT_IMAGES_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/input_images"
         self.OUTPUT_MASKS_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/output_images"
@@ -152,7 +152,7 @@ class MicrosegnetNode(Node):
                 if cls_pred.item() < 0.98:  
                     # If no object is predicted, create a black mask
                     pred = np.zeros((self.image.shape[0], self.image.shape[1]), dtype=np.uint8)
-                    self.blank_images_counter+=1
+                    self.blank_images_counter+=1*msg.force_in_range
                     self.good_images_counter = 0
                     #If there is 4 frames without annotations
                     if self.blank_images_counter >= 2:
@@ -187,7 +187,7 @@ class MicrosegnetNode(Node):
                     #Model predictions
                     out = torch.sigmoid(outputs).squeeze()
                     pred = out.cpu().detach().numpy()
-                    self.good_images_counter += 1       
+                    self.good_images_counter += 1*msg.force_in_range       
 
                     if self.good_images_counter >=3:
                         self.blank_images_counter=0
