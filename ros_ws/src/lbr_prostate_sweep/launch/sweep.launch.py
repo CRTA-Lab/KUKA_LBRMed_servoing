@@ -103,6 +103,18 @@ def generate_launch_description():
 
     ])
 
+    helper = GroupAction([    
+    PushRosNamespace(namespace),
+
+    Node(
+        package='lbr_prostate_sweep',
+        executable='helper_node',
+        output='log',
+    )
+
+    ])
+
+
     ld = LaunchDescription([
             namespace_launch_arg,
             model,mode
@@ -110,6 +122,7 @@ def generate_launch_description():
     ld.add_action(image_acq)
     ld.add_action(servoing)
     ld.add_action(aiming)
+    ld.add_action(helper)
     ld.add_action(force_comp)
     ld.add_action(robot_description)
     ld.add_action(moveit_servo)

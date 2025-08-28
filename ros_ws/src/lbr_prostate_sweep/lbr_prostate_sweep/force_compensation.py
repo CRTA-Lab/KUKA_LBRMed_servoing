@@ -88,22 +88,22 @@ class ForceCompensationNode(Node):
 
         # Fixed values for y/z PID
 
-        self.declare_parameter('1/Kp', 25.0)
-        self.declare_parameter('1/Ki', 100)
-        self.declare_parameter('1/Kd', 0.0)
+        # self.declare_parameter('1/Kp', 12.0)
+        # self.declare_parameter('1/Ki', 50.0)
+        # self.declare_parameter('1/Kd', 0.0)
 
-        self.Kp = 1/self.get_parameter('1/Kp').get_parameter_value().double_value
-        self.Ki = 1/self.get_parameter('1/Ki').get_parameter_value().double_value
-        Kd_val = self.get_parameter('1/Kd').get_parameter_value().double_value
-        self.Kd = 0.0 if Kd_val == 0.0 else 1/Kd_val
+        # self.Kp = 1/self.get_parameter('1/Kp').get_parameter_value().double_value
+        # self.Ki = 1/self.get_parameter('1/Ki').get_parameter_value().double_value
+        # Kd_val = self.get_parameter('1/Kd').get_parameter_value().double_value
+        # self.Kd = 0.0 if Kd_val == 0.0 else 1/Kd_val
         
-        # self.Kp = 1/25
-        # self.Ki = 0.0
-        # self.Kd = 0.0
+        self.Kp = 1/40
+        self.Ki = 1/150
+        self.Kd = 0.0
 
 
         # create subscribers and publishers
-        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.ft_sub = self.create_subscription(WrenchStamped,'/wrench_smoothed',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.twist_sub = self.create_subscription(TwistStamped,'/twist_cmd',self.twist_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.image_sub = self.create_subscription(Float32,'/axial_position',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
