@@ -19,6 +19,7 @@ setup(
     entry_points={
         'console_scripts': [
             'microsegnet_inference = microsegnet_inference.microsegnet_inference:main',
+            'yolo_predict = microsegnet_inference.yolo_predict:main'
         ],
     },
 )
