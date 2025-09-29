@@ -23,7 +23,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'vertical_motion=patient_motion_sim.vertical_motion:main'
+            'vertical_motion=patient_motion_sim.vertical_motion:main',
+            'axial_motion=patient_motion_sim.axial_motion:main',
+            'horisontal_motion=patient_motion_sim.horisontal_motion:main',
+            'radial_motion=patient_motion_sim.radial_motion:main'
         ],
     },
 )

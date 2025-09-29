@@ -14,7 +14,8 @@ import glob
 
 def generate_launch_description():
 
-    dir = '/home/matija/KUKA_LBRMed_servoing/logs/'
+    dir = '~/KUKA_LBRMed_servoing/logs/'
+    dir = os.path.expanduser(dir)
     files = list(filter(os.path.isdir, glob.glob(dir + '*')))
     files.sort(key=os.path.getmtime, reverse=True)
     log_dir = files[0] if len(files) > 0 else dir
