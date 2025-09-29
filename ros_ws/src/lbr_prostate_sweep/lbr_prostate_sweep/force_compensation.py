@@ -66,7 +66,7 @@ class ForceCompensationNode(Node):
         self.get_logger().info(f'Logging data to: {data_logger_path}')
 
         self.data_logger = open(data_logger_path+'force_compensation.log', 'w')
-
+        
 
         # declare parameters for phi and theta PIDs (dynamic) (writen by copilot)
         self.declare_parameter('1/phi_Kp', 3.0)
@@ -97,7 +97,7 @@ class ForceCompensationNode(Node):
 
 
         T = 1/200
-        self.xPID = PID(0.012, 0, 0.002, 1/16)
+        self.xPID = PID(0.01, 0, 0.002, 1/16)
         self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.zPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)

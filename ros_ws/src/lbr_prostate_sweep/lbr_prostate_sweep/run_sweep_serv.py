@@ -2,12 +2,13 @@ import rclpy
 import rclpy.action
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
-from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
+from rclpy.callback_groups import ReentrantCallbackGroup
 from tf2_ros.buffer import Buffer
 from tf2_ros import TransformListener, TransformBroadcaster
 from custom_interfaces.msg import ImageMeta
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import TwistStamped, WrenchStamped
+from std_msgs.msg import Float32
 from std_srvs.srv import Trigger
 import cv2
 from cv_bridge import CvBridge
@@ -36,7 +37,8 @@ class SweepNode(Node):
         # create subscription on the US_image topic
         self.img_sub = self.create_subscription(ImageMeta,'/US_image',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         # create subscription on the wrench topic 
-        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=MutuallyExclusiveCallbackGroup())
+        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.axial_sub = self.create_subscription(Float32,'/axial_position',self.axial_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # create publisher for moveit servo delta_twist_cmds topic
         #self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
@@ -51,7 +53,9 @@ class SweepNode(Node):
         self.tf_broadcaster = TransformBroadcaster(self)
         self.tf_timer = self.create_timer(1/100,self.broadcast_init_pose,callback_group=self.time_cbg)
 
+
         # initializeing the variables
+        self.axial_position = 0.0
         self.wrench = WrenchStamped()
         self.base_frame = 'lbr_link_0'
         self.TCP_frame = 'lbr_link_ee'
@@ -70,9 +74,13 @@ class SweepNode(Node):
         self.wrench = msg
         if self.init_pose != None:
             pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
-            self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}, {}\n'.format(pose.header.stamp.sec,pose.header.stamp.nanosec,pose.transform.translation.x,pose.transform.translation.y,pose.transform.translation.z,
-                                                                pose.transform.rotation.x,pose.transform.rotation.y,pose.transform.rotation.z,pose.transform.rotation.w))
+            self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}, {}, {}\n'.format(pose.header.stamp.sec,pose.header.stamp.nanosec,pose.transform.translation.x,pose.transform.translation.y,pose.transform.translation.z,
+                                                                pose.transform.rotation.x,pose.transform.rotation.y,pose.transform.rotation.z,pose.transform.rotation.w, self.axial_position))
         return
+
+    def axial_cb(self,msg:Float32):
+        '''Callback for the axial position subscription'''
+        self.axial_position = msg.data
 
     def sweep_start(self,request:Trigger.Request,response:Trigger.Response):
         '''Callback for the start service, sets class variable for starting the sweep to True'''
@@ -92,6 +100,7 @@ class SweepNode(Node):
             
         else:
             self.changed_dir = True
+        response.success = True
         return response
 
     def initialize_pose(self):
@@ -166,7 +175,7 @@ class SweepNode(Node):
             self.twist_pub.publish(msg_out)
 
         # if position was not initialized, check if there is valid position data and initialize
-        elif msg.angle != float('inf'):
+        elif msg.angle != float('inf') and self.start_flag:
             self.get_logger().info('Inicijalizacija')
             self.initialize_pose()
             # msg_out = TwistStamped()

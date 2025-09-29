@@ -15,7 +15,8 @@ import time
 def generate_launch_description():
 
 
-    log_dir = '/home/matija/KUKA_LBRMed_servoing/logs/{}/'.format(time.strftime("%Y-%m-%d_%H-%M-%S"))
+    log_dir = '~/KUKA_LBRMed_servoing/logs/{}/'.format(time.strftime("%Y-%m-%d_%H-%M-%S"))
+    log_dir = os.path.expanduser(log_dir)
     os.mkdir(log_dir)
 
     namespace_launch_arg = DeclareLaunchArgument(
@@ -122,7 +123,7 @@ def generate_launch_description():
     ld.add_action(image_acq)
     ld.add_action(servoing)
     ld.add_action(aiming)
-    ld.add_action(helper)
+    #ld.add_action(helper)
     ld.add_action(force_comp)
     ld.add_action(robot_description)
     ld.add_action(moveit_servo)
