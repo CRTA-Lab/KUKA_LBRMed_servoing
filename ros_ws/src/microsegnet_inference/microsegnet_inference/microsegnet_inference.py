@@ -18,6 +18,7 @@ sys.path.append("/home/racunalo/inference_ws/src/microsegnet_inference/microsegn
 from TransUNet.networks.vit_seg_modeling import VisionTransformer as ViT_seg
 from TransUNet.networks.vit_seg_modeling import CONFIGS as CONFIGS_ViT_seg
 import time
+import glob
 
 # Node
 class MicrosegnetNode(Node):
@@ -27,9 +28,10 @@ class MicrosegnetNode(Node):
         cb_grup = ReentrantCallbackGroup()
 
         #Ultrasound image subscriber
-        self.create_subscription(ImageMeta, '/US_image', self.read_ultrasound_callback, qos_profile=qos_profile_system_default, callback_group=cb_grup)
+        
 
         self.position_publisher = self.create_publisher(Float32, '/axial_position', qos_profile=qos_profile_system_default, callback_group=cb_grup)
+        self.position = 0.0
         self.bridge = CvBridge()
         
         #Process triggers
@@ -38,6 +40,8 @@ class MicrosegnetNode(Node):
 
         #Start Trigger init
         # Create a Trigger request to start rotation 
+        self.client_start_sweep.wait_for_service()
+        self.get_logger().info('Connected to /sweep/start service.')
         request = Trigger.Request()
         self.get_logger().info('Start sweep.')                 
         # Send the request asynchronously
@@ -45,13 +49,20 @@ class MicrosegnetNode(Node):
         # Add a callback to handle the response
         future.add_done_callback(self.response_callback)
 
+        self.create_subscription(ImageMeta, '/US_image', self.read_ultrasound_callback, qos_profile=qos_profile_system_default, callback_group=cb_grup)
+
         #Microsegnet settings
         self.MODEL_PATH="/home/racunalo/KUKA_LBRMed_servoing/ros_ws/cls_epoch_19.pth"
-        MAIN_DIRECTORY_NAME="/home/racunalo/KUKA_LBRMed_servoing/vtk/microsegnet"
+        dir = '~/KUKA_LBRMed_servoing/logs/'
+        dir = os.path.expanduser(dir)
+        files = list(filter(os.path.isdir, glob.glob(dir + '*')))
+        files.sort(key=os.path.getmtime, reverse=True)
+        main_dir = files[0] if len(files) > 0 else dir
+        MAIN_DIRECTORY_NAME=f'{main_dir}/vtk'
         self.INPUT_IMAGES_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/input_images"
         self.OUTPUT_MASKS_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/output_images"
         self.OUTPUT_SEGMENTATIONS_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/output_segmentations"
-        import os
+        
 
         if os.path.exists(MAIN_DIRECTORY_NAME):
             shutil.rmtree(MAIN_DIRECTORY_NAME)
@@ -116,7 +127,7 @@ class MicrosegnetNode(Node):
 
         #Ultrasound image angle
         self.image_angle = msg.angle
-        self.get_logger().info(f'Angle: {self.image_angle:.10f}')
+        #self.get_logger().info(f'Angle: {self.image_angle:.10f}')
         # output_path_original_image= os.path.join(self.INPUT_IMAGES_DIRECTORY, f"original_{self.image_angle:.6f}.png")
         # cv2.imwrite(output_path_original_image, self.cv2_image)
 
@@ -148,7 +159,7 @@ class MicrosegnetNode(Node):
                 cls_pred = torch.sigmoid(cls_output).squeeze()
                 #self.get_logger().info(f"{cls_pred}")
                 #Check if the classification predicts an object (you may need to adjust the threshold)
-                self.get_logger().info(f'Confidence: {cls_pred.item()}')
+                #self.get_logger().info(f'Confidence: {cls_pred.item()}')
                 if cls_pred.item() < 0.98:  
                     # If no object is predicted, create a black mask
                     pred = np.zeros((self.image.shape[0], self.image.shape[1]), dtype=np.uint8)
@@ -197,7 +208,7 @@ class MicrosegnetNode(Node):
                             self.start_sweep_recording=True
 
                 
-                self.get_logger().info('Recording!')
+                #self.get_logger().info('Recording!')
 
                 if x != patch_size[0] or y != patch_size[1]:
                     pred = cv2.resize(out, (y, x), interpolation = cv2.INTER_NEAREST)
@@ -256,13 +267,12 @@ class MicrosegnetNode(Node):
                 if len(contours) > 0:
                     x,y,w,h = cv2.boundingRect(contours[0])
                     #cv2.rectangle(self.cv2_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    cv2.circle(self.cv2_image, (int(x + w/2), int(y + h/2)), 5, (0, 0, 255), -1)
-                    cv2.circle(self.cv2_image, (int(self.cv2_image.shape[1]/2), int(self.cv2_image.shape[0]/2)), 10, (255, 0, 0), 2)
+                    # cv2.circle(self.cv2_image, (int(x + w/2), int(y + h/2)), 5, (0, 0, 255), -1)
+                    # cv2.circle(self.cv2_image, (int(self.cv2_image.shape[1]/2), int(self.cv2_image.shape[0]/2)), 10, (255, 0, 0), 2)
 
-                    self.position_publisher.publish(Float32(data=(self.cv2_image.shape[1]/2 - (x + w/2))/12))
+                    self.position = (self.cv2_image.shape[1]/2 - (x + w/2))/12
                     #self.get_logger().info(f'Distance: {self.cv2_image.shape[1]/2 - (x + w/2):.2f} px')
-                else:
-                    self.position_publisher.publish(Float32(data=0.0))
+                self.position_publisher.publish(Float32(data=self.position))
                 cv2.imshow("Segmentation", self.cv2_image)
                 output_segmentation_path = os.path.join(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f"segmentation_{self.image_angle:.6f}.png")
                 
@@ -272,7 +282,7 @@ class MicrosegnetNode(Node):
 
                 end_time = time.time()
                 inference_time = end_time - start_time
-                self.get_logger().info(f'Inference time: {inference_time:.6f}')
+                #self.get_logger().info(f'Inference time: {inference_time:.6f}')
                 #self.get_logger().info(f'Angle: {self.image_angle:.10f}')
                 if self.start_recording and msg.force_in_range:
                     cv2.imwrite(output_mask_path, prediction)
