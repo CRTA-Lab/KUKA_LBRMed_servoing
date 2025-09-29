@@ -2,6 +2,7 @@ ros_ws/build
 ros_ws/install
 ros_ws/log
 logs
+graphs
 US_pics
 .vscode
 vtk
