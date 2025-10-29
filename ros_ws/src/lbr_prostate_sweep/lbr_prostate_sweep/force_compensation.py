@@ -4,7 +4,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
 from rclpy.callback_groups import ReentrantCallbackGroup
 from std_msgs.msg import Float32
-from geometry_msgs.msg import WrenchStamped, TwistStamped
+from geometry_msgs.msg import WrenchStamped, TwistStamped, Vector3Stamped
 from rcl_interfaces.msg import SetParametersResult
 
 def saturation(value, limit = 1):
@@ -53,6 +53,13 @@ class PID():
 
         controll = self.kp*error + self.ki*self.integral + self.kd*diff
         return controll
+    
+    def reset(self):
+        '''Resets the PID controller.'''
+        self.integral = 0
+        self.prev = 0
+        return
+    
 
 class ForceCompensationNode(Node):
     '''Node for force compensation using PID control.'''
@@ -97,7 +104,8 @@ class ForceCompensationNode(Node):
 
 
         T = 1/200
-        self.xPID = PID(0.01, 0, 0.002, 1/16)
+        self.xPID_lin = PID(0.01, 0, 0.002, 1/16)
+        self.xPID_conv = PID(0.009, 0, 0.001, 1/20)
         self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.zPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
@@ -119,12 +127,19 @@ class ForceCompensationNode(Node):
         self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.twist_sub = self.create_subscription(TwistStamped,'/twist_cmd',self.twist_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.image_sub = self.create_subscription(Float32,'/axial_position',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.conv_data_sub = self.create_subscription(Vector3Stamped,'/conv_element_position',self.conv_data_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # initialize variables
         self.twist_cmd = TwistStamped()
         self.axial_twist = 0.0
+        self.use_linear_for_x = True
+        self.initialised = False
+
+        self.conv_x = 0
+        self.conv_y = 0
+        self.conv_w = 0
 
         # initialize PID controllers
         
@@ -183,9 +198,37 @@ class ForceCompensationNode(Node):
         Args:        msg (Float32): message containing the position of prostate from img
         Returns:     None'''
         #self.get_logger().info('Image position: {}'.format(msg.data))
-        self.axial_twist = self.xPID.update(msg.data)
+        if not self.use_linear_for_x: return
+        if not self.initialised and abs(msg.data) <= 0.1:
+            self.initialised = True
+            self.use_linear_for_x = False
+            self.axial_twist = 0.0
+            self.get_logger().info('Image position initialised')
+        elif abs(msg.data) <= 0.2:
+            self.use_linear_for_x = False
+            self.axial_twist = 0.0
+        else:
+            self.axial_twist = self.xPID_lin.update(msg.data)
+            self.get_logger().info('Using Axial element')
         return
     
+    def conv_data_cb(self, msg: Vector3Stamped):
+        '''Callback for the position calculated from image subscriber.
+        Args:        msg (Vector3Stamped): message containing the position of prostate from img
+        Returns:     None'''
+        if not self.initialised:
+            self.conv_x = msg.vector.x
+            self.conv_y = msg.vector.y
+            self.conv_w = msg.vector.z
+            return
+        if msg.vector.x == float('inf') or abs(msg.vector.x - self.conv_x) > 5:
+            self.use_linear_for_x = True
+        elif not self.use_linear_for_x:
+            
+            self.axial_twist = self.xPID_conv.update(self.conv_w - msg.vector.z)
+            self.get_logger().info('Using Convex element')
+            self.get_logger().info('Convex pid output : {}'.format(self.axial_twist),throttle_duration_sec=0.5)
+        return
 
     def ft_callback(self, msg: WrenchStamped):
         '''Callback for the force-torque sensor data.
@@ -196,25 +239,25 @@ class ForceCompensationNode(Node):
         msg_out = TwistStamped()
         msg_out.header = msg.header
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
-        #msg_out.twist.linear.x = self.axial_twist
-        msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 7) + self.twist_cmd.twist.linear.y)
-        msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
+        msg_out.twist.linear.x = self.axial_twist
+        # msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 7) + self.twist_cmd.twist.linear.y)
+        # msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
         msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
 
         M_y = msg.wrench.torque.y - msg.wrench.force.z * 0.33849
         M_z = msg.wrench.torque.z + msg.wrench.force.x * 0.06569 - msg.wrench.force.y * 0.33849
 
-        self.get_logger().info('Moment: measured: {}, corrected: {},  Force : {}'.format(msg.wrench.torque.z, M_z,msg.wrench.force.y), throttle_duration_sec=0.5)
+        #self.get_logger().info('Moment: measured: {}, corrected: {},  Force : {}'.format(msg.wrench.torque.z, M_z,msg.wrench.force.y), throttle_duration_sec=0.5)
         # msg_out.twist.angular.y = saturation(self.phi_PID.update(M_y*4/3) + self.twist_cmd.twist.angular.y)
         # msg_out.twist.angular.z = saturation(self.theta_PID.update(M_z*4/3) + self.twist_cmd.twist.angular.z)
 
-        self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}\n'.format(msg.header.stamp.sec,msg.header.stamp.nanosec,
-                                                                                                    msg.wrench.force.x,msg.wrench.force.y,msg.wrench.force.z,
-                                                                                                    msg.wrench.torque.x,msg.wrench.torque.y,msg.wrench.torque.z,))
+        # self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}\n'.format(msg.header.stamp.sec,msg.header.stamp.nanosec,
+        #                                                                                             msg.wrench.force.x,msg.wrench.force.y,msg.wrench.force.z,
+        #                                                                                             msg.wrench.torque.x,msg.wrench.torque.y,msg.wrench.torque.z,))
 
         self.twist_pub.publish(msg_out)
     
-    def twist_cb(self,msg: TwistStamped):
+    def twist_cb(self,msg: TwistStamped): 
         '''Callback for forwarding other twist commands.
         Args:        msg (TwistStamped): message containing the twist command
         Returns:     None'''

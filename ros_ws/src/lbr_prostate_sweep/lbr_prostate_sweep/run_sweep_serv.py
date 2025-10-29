@@ -16,6 +16,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import time
 import math
+import os
+import glob
 
 
 class SweepNode(Node):
@@ -66,7 +68,15 @@ class SweepNode(Node):
         self.changed_dir = False
         #self.zcf = True # zero cross flag
 
-        
+        dir = '~/KUKA_LBRMed_servoing/logs/'
+        dir = os.path.expanduser(dir)
+        files = list(filter(os.path.isdir, glob.glob(dir + '*')))
+        files.sort(key=os.path.getmtime, reverse=True)
+        main_dir = files[0] if len(files) > 0 else dir
+        MAIN_DIRECTORY_NAME=f'{main_dir}/vtk'
+        self.INPUT_IMAGES_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/input_images"
+        os.makedirs(MAIN_DIRECTORY_NAME, exist_ok=True)
+        os.makedirs(self.INPUT_IMAGES_DIRECTORY, exist_ok=True)
 
         self.get_logger().info('Init done')
 
@@ -163,15 +173,18 @@ class SweepNode(Node):
 
             # create and publish msg
             msg_out = TwistStamped()
+            cv_image = self.bridge.imgmsg_to_cv2(msg.image)
             if not msg.force_in_range:
                 msg_out.twist.angular.x = 0.0
             elif self.back_flag:
                 msg_out.twist.angular.x = -1.0
+                cv2.imwrite(f"{self.INPUT_IMAGES_DIRECTORY}/img_{msg.angle:.6f}.png",cv_image)
             else:
                 msg_out.twist.angular.x = 1.0
             #msg_out.twist.linear.x = 0.6
             msg_out.header.stamp = self.get_clock().now().to_msg()
             #msg_out.header.frame_id = self.TCP_frame
+            # TODO odkomentirati za stvarni rad
             self.twist_pub.publish(msg_out)
 
         # if position was not initialized, check if there is valid position data and initialize

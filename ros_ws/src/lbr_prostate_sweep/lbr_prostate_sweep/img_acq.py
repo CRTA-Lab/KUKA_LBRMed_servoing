@@ -16,6 +16,7 @@ from scipy.spatial.transform import Rotation
 import socket
 
 
+
 class ImageAquisition(Node):
     '''Node for aquiring the image from US probe and publishing it on the network with coresponding angle
     Extends Node'''
@@ -33,13 +34,17 @@ class ImageAquisition(Node):
 
         # start publisher for US image
         self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default,callback_group=self.pub_sub_cbg)
-        self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        #TODO vratiti na staro
+        #self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # timer for periodicaly captureing the image from US
-        #self.init_socket()
-        self.create_timer(1/20,self.get_image)
+        self.init_socket()
+        self.create_timer(1/20,self.tcp_img_acq)
 
-        self.force_in_range = False
+        #TODO vratit na staro
+        self.force_in_range = True
+
+        
 
         # connecting to the US
         self.cap = cv2.VideoCapture(0)
@@ -50,30 +55,61 @@ class ImageAquisition(Node):
     def init_socket(self):
         '''Initializes the socket connection for image reception.'''
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(('192.168.42.195', 9999))
+        self.sock.connect(('192.168.0.150', 9999))
         self.get_logger().info('Socket initialized.')
         return
     
 
     def tcp_img_acq(self):
-        header = self.sock.recv(8)
+        self.sock.send(b'a')
         stamp = self.get_clock().now().to_msg()
-        if not header:
+        total_bytes = self.sock.recv(4)
+        if not total_bytes:
             return
-        height, width = struct.unpack('>II', header)
-
-        # raw image data
-        buffer_size = height * width
-        data = b''
-        while len(data) < buffer_size:
-            packet = self.sock.recv(buffer_size - len(data))
-            if not packet:
+        total_bytes = struct.unpack('<I', total_bytes)[0]
+        #self.get_logger().info(f'Total bytes to receive: {total_bytes}')
+        header_bytes = self.sock.recv(40)
+        if not header_bytes:
+            return
+        pixel_bytes = self.sock.recv(total_bytes - 40)
+        while len(pixel_bytes) < (total_bytes - 40):
+            #self.get_logger().info('Receiving image data... ({})'.format(len(pixel_bytes)/(total_bytes - 40)))
+            more_bytes = self.sock.recv((total_bytes - 40) - len(pixel_bytes))
+            if not more_bytes:
                 break
-            data += packet
+            pixel_bytes += more_bytes
+        if not pixel_bytes:
+            return
+        file_size = 14+total_bytes
+        bmp_file_header = struct.pack('<2sIHHI', b'BM', file_size, 0, 0, 14+40)
+        bmp_bytes = bmp_file_header + header_bytes + pixel_bytes
+        frame = np.frombuffer(bmp_bytes, dtype=np.uint8)
+        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR_RGB)
+        # header = self.sock.recv(8)
+        # 
+        # if not header:
+        #     return
+        # height, width = struct.unpack('>II', header)
 
-        frame = np.frombuffer(data, dtype=np.uint8).reshape((height, width))
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-        cv2.imshow("US Scan", frame)
+        # # raw image data
+        # buffer_size = height * width
+        # data = b''
+        # while len(data) < buffer_size:
+        #     packet = self.sock.recv(buffer_size - len(data))
+        #     if not packet:
+        #         break
+        #     data += packet
+
+        # frame = np.frombuffer(data, dtype=np.uint8).reshape((height, width))
+        # frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+        #self.get_logger().info(f'Image received: {frame.shape}',throttle_duration_sec=0.5)
+        # cv2.line(frame, (0, frame.shape[0] // 6), (frame.shape[1],  frame.shape[0] // 6), (0, 0, 255), 1)
+        # cv2.line(frame, (0, 5*frame.shape[0] // 6), (frame.shape[1],  5*frame.shape[0] // 6), (0, 0, 255), 1)
+        # cv2.line(frame, (frame.shape[1] // 2, 0), (frame.shape[1] // 2, frame.shape[0]), (0, 0, 255), 1)
+        # cv2.line(frame, (frame.shape[1] // 6, 0), (frame.shape[1] // 6, frame.shape[0]), (0, 0, 255), 1)
+        # cv2.line(frame, (5*frame.shape[1] // 6, 0), (5*frame.shape[1] // 6, frame.shape[0]), (0, 0, 255), 1)
+        # cv2.imshow("US Scan", frame)
+        
         
         base_frame = 'lbr_link_0'
         TCP_frame = 'lbr_link_ee'
