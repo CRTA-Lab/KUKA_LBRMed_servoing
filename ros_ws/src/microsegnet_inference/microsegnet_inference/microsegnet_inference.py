@@ -39,15 +39,16 @@ class MicrosegnetNode(Node):
         self.client_change_direction=self.create_client(Trigger, "/sweep/edge_trigger",callback_group=cb_grup)
 
         #Start Trigger init
-        # Create a Trigger request to start rotation 
+        # Create a Trigger request to start rotation
+        self.client_change_direction.wait_for_service() 
         self.client_start_sweep.wait_for_service()
         self.get_logger().info('Connected to /sweep/start service.')
         request = Trigger.Request()
         self.get_logger().info('Start sweep.')                 
         # Send the request asynchronously
-        future = self.client_start_sweep.call_async(request)
-        # Add a callback to handle the response
-        future.add_done_callback(self.response_callback)
+        # future = self.client_start_sweep.call_async(request)
+        # # Add a callback to handle the response
+        # future.add_done_callback(self.response_callback)
 
         self.create_subscription(ImageMeta, '/US_image', self.read_ultrasound_callback, qos_profile=qos_profile_system_default, callback_group=cb_grup)
 
@@ -96,7 +97,6 @@ class MicrosegnetNode(Node):
         #Ultrasound roation angle check
         self.angle=None
 
-        #TODO: Vratit na False
         self.segmenation_start=False
 
         #Blank annotation counter - for switching the sweep orientation
@@ -138,7 +138,7 @@ class MicrosegnetNode(Node):
 
         #Check if the image_angle is different to the stored angle (if they are the same, it is the same image)
         # TODO: Remove or True when done testing
-        if self.image_angle != self.angle:
+        if self.image_angle != self.angle or True:
             self.angle = self.image_angle
             #print(type(self.angle),flush=True)
             self.image= cv2.cvtColor(self.cv2_image, cv2.COLOR_BGR2GRAY)
@@ -160,7 +160,7 @@ class MicrosegnetNode(Node):
                 #self.get_logger().info(f"{cls_pred}")
                 #Check if the classification predicts an object (you may need to adjust the threshold)
                 #self.get_logger().info(f'Confidence: {cls_pred.item()}')
-                if cls_pred.item() < 0.98:  
+                if cls_pred.item() < 0.95:  
                     # If no object is predicted, create a black mask
                     pred = np.zeros((self.image.shape[0], self.image.shape[1]), dtype=np.uint8)
                     self.blank_images_counter+=1*msg.force_in_range

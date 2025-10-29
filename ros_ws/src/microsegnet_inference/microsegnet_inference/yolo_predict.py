@@ -8,7 +8,7 @@ from rclpy.qos import qos_profile_system_default
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener 
 from geometry_msgs.msg import Vector3Stamped, WrenchStamped
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, Image
 from custom_interfaces.msg import ImageMeta
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
@@ -33,7 +33,10 @@ class ImageAquisition(Node):
         self.pub_sub_cbg = ReentrantCallbackGroup()
 
         # start publisher for US image
-        self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        #self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default,callback_group=self.pub_sub_cbg)
+
+        self.img_pub = self.create_publisher(Image,'conv_img',qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.position_pub = self.create_publisher(Vector3Stamped,'conv_element_position',qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # timer for periodicaly captureing the image from US
         self.init_socket()
@@ -41,9 +44,11 @@ class ImageAquisition(Node):
 
         self.force_in_range = False
 
-        model_path = '/home/racunalo/KUKA_LBRMed_servoing/ros_ws/src/microsegnet_inference/resource/best.pt'
+        model_path = '/home/racunalo/KUKA_LBRMed_servoing/ros_ws/src/microsegnet_inference/resource/best_siki_5.pt'
         self.model = YOLO(model_path)  # pretrained YOLO11n model
 
+        self.key = 0
+        self.pic_no = 1
         
         return
 
@@ -51,87 +56,142 @@ class ImageAquisition(Node):
     def init_socket(self):
         '''Initializes the socket connection for image reception.'''
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(('192.168.0.150', 9999))
+        self.sock.connect(('192.168.0.168', 9999))
         self.get_logger().info('Socket initialized.')
         return
     
 
     def tcp_img_acq(self):
-        header = self.sock.recv(8)
+        self.sock.send(b'a')
         stamp = self.get_clock().now().to_msg()
-        if not header:
+        total_bytes = self.sock.recv(4)
+        if not total_bytes:
             return
-        height, width = struct.unpack('>II', header)
-
-        # raw image data
-        buffer_size = height * width
-        data = b''
-        while len(data) < buffer_size:
-            packet = self.sock.recv(buffer_size - len(data))
-            if not packet:
+        total_bytes = struct.unpack('<I', total_bytes)[0]
+        #self.get_logger().info(f'Total bytes to receive: {total_bytes}')
+        header_bytes = self.sock.recv(40)
+        if not header_bytes:
+            return
+        pixel_bytes = self.sock.recv(total_bytes - 40)
+        while len(pixel_bytes) < (total_bytes - 40):
+            #self.get_logger().info('Receiving image data... ({})'.format(len(pixel_bytes)/(total_bytes - 40)))
+            more_bytes = self.sock.recv((total_bytes - 40) - len(pixel_bytes))
+            if not more_bytes:
                 break
-            data += packet
-
-        frame = np.frombuffer(data, dtype=np.uint8).reshape((height, width))
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+            pixel_bytes += more_bytes
+        if not pixel_bytes:
+            return
+        file_size = 14+total_bytes
+        bmp_file_header = struct.pack('<2sIHHI', b'BM', file_size, 0, 0, 14+40)
+        bmp_bytes = bmp_file_header + header_bytes + pixel_bytes
+        frame = np.frombuffer(bmp_bytes, dtype=np.uint8)
+        frame = cv2.imdecode(frame, cv2.IMREAD_COLOR_BGR)
         cv2.imshow("US Scan", frame)
+        #cv2.waitKey(1)
         
-        base_frame = 'lbr_link_0'
-        TCP_frame = 'lbr_link_ee'
-        sweep_frame = 'init_pose'
+        #TODO vratit ovaj dio da se slika salje na ros topic
+        # base_frame = 'lbr_link_0'
+        # TCP_frame = 'lbr_link_ee'
+        # sweep_frame = 'init_pose'
 
         ros_image = self.bridge.cv2_to_imgmsg(frame)
         ros_image.header.stamp = stamp
 
-        #try loop for reading the TCP transform, since node is started usualy before robot's controller at first there will be no data for transform and that will cause errors
-        try:
-            trans = self.tf_buffer.lookup_transform(sweep_frame,TCP_frame,rclpy.time.Time())
+        # #try loop for reading the TCP transform, since node is started usualy before robot's controller at first there will be no data for transform and that will cause errors
+        # try:
+        #     trans = self.tf_buffer.lookup_transform(sweep_frame,TCP_frame,rclpy.time.Time())
 
-            # transforming obtained quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
-            # KUKA uses zy'x'' notation of euler angles
-            rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
-            angle = rot.as_euler('ZYX',degrees=False)[2]
-        except Exception as e:
-            #self.get_logger().warning('dogodila se graska : {}'.format(e))
-            try:
-                trans = self.tf_buffer.lookup_transform(base_frame,TCP_frame,rclpy.time.Time())
+        #     # transforming obtained quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
+        #     # KUKA uses zy'x'' notation of euler angles
+        #     rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+        #     angle = rot.as_euler('ZYX',degrees=False)[2]
+        # except Exception as e:
+        #     #self.get_logger().warning('dogodila se graska : {}'.format(e))
+        #     try:
+        #         trans = self.tf_buffer.lookup_transform(base_frame,TCP_frame,rclpy.time.Time())
 
-                # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
-                # KUKA uses zy'x'' notation of euler angles
-                rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
-                angle = rot.as_euler('ZYX',degrees=False)[2]
-            # when transformation could not be obtained angle is noted sa infinite    
-            except Exception as e:
-                #self.get_logger().warning('dogodila se graska : {}'.format(e))
-                angle = float('inf')
+        #         # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
+        #         # KUKA uses zy'x'' notation of euler angles
+        #         rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+        #         angle = rot.as_euler('ZYX',degrees=False)[2]
+        #     # when transformation could not be obtained angle is noted sa infinite    
+        #     except Exception as e:
+        #         #self.get_logger().warning('dogodila se graska : {}'.format(e))
+        #         angle = float('inf')
 
-        # creating an publishing the msg
-        msg = ImageMeta()
-        msg.image = ros_image
-        msg.angle = angle
-        msg.force_in_range = self.force_in_range
-        self.img_pub.publish(msg)
+        # # creating an publishing the msg
+        #frame = cv2.resize(frame, (640, 640), interpolation=cv2.INTER_AREA)
+        #frame = cv2.blur(frame, (3,3))
+        if self.key == ord('s'):
+            cv2.imwrite('/home/racunalo/KUKA_LBRMed_servoing/US_pics/temp/pic_{}.jpg'.format(self.pic_no),frame)
+            self.get_logger().info('Picture saved: pic_{}.jpg'.format(self.pic_no))
+            self.pic_no +=1
 
-        results = self.model.predict(frame,stream=True,conf = 0.8,task='segment')
+        cv2.blur(frame, (3,3))
+        img_arr = np.array(frame)
 
+        results = self.model.predict(frame,stream=True,conf = 0.8,task='segment', iou=0.3, verbose=False)
         #Process results generator
         for result in results:
             boxes = result.boxes  # Boxes object for bounding box outputs
-            for box in boxes:
-                # print(box.xyxy)  # x1, y1, x2, y2
-                # print(box.xywh)  # x, y, w, h
-                # print(box.conf)  # confidence
-                # print(box.cls)  # class
-                # print(box.prob)  # class probabilities (multiclass only)
-                x1,y1,x2,y2 = map(int,box.xyxy[0])
-                cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)
-            #masks = result.masks  # Masks object for segmentation masks outputs
+            # if boxes is None:
+            #     self.get_logger().info('No boxes detected')
+            # else:
+            #     for box in boxes:
+            #         # print(box.xyxy)  # x1, y1, x2, y2
+            #         # print(box.xywh)  # x, y, w, h
+            #         # print(box.conf)  # confidence
+            #         # print(box.cls)  # class
+            #         # print(box.prob)  # class probabilities (multiclass only)
+
+            #         # x1,y1,x2,y2,x3,y3,x4,y4 = map(int,box.xyxyxyxy[0])
+            #         # cv2.drawContours(frame, [np.array([[x1,y1],[x2,y2],[x3,y3],[x4,y4]])], -1, (0,255,0), 2)
+            #         x1,y1,x2,y2 = map(int,box.xyxy[0])
+            #         cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)
+            masks = result.masks  # Masks object for segmentation masks outputs
+            if masks is None:
+                msg = Vector3Stamped()
+                msg.header.stamp = stamp
+                msg.vector.x = float('inf')
+                msg.vector.y = float('inf')
+                msg.vector.z = float('inf')
+            else:
+                for i in range(len(masks)):
+                    mask = masks[i]
+                    contour =mask.xy[0]
+                    contour = contour.astype(np.int32)
+                    contour = contour.reshape(-1, 1, 2)
+                    rect = cv2.minAreaRect(contour)
+                    msg = Vector3Stamped()
+                    msg.header.stamp = stamp
+                    if len(masks) > 1:
+                        if i == 0:
+                            width = max(rect[1])
+                            x = rect[0][0]
+                            y = rect[0][1]
+                        elif i == 1:
+                            msg.vector.x = (rect[0][0] + x )/2/12
+                            msg.vector.y = (rect[0][1] + y )/2/12
+                            msg.vector.z = (abs(rect[0][0] - x) + (width + max(rect[1]))/2)/12
+                    else:
+                        msg.vector.x = rect[0][0]/12
+                        msg.vector.y = rect[0][1]/12
+                        msg.vector.z = max(rect[1])/12
+                    box = cv2.boxPoints(rect)
+                    box = np.int0(box)
+                    cv2.drawContours(frame, [contour], -1, (255, 0, 0))
+                    cv2.drawContours(frame, [box], -1, (0, 255, 0))
             # keypoints = result.keypoints  # Keypoints object for pose outputs
             # probs = result.probs  # Probs object for classification outputs
             # obb = result.obb  # Oriented boxes object for OBB outputs
             # result.show()  # display to screen
+            
+
+
+        self.img_pub.publish(ros_image)
+        self.position_pub.publish(msg)
         cv2.imshow("yolo", frame)
-        cv2.waitKey(1)
+        self.key = cv2.waitKey(5)
         return
 
 
