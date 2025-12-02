@@ -17,6 +17,38 @@ import socket
 from ultralytics import YOLO
 
 
+def filter_main_object(mask, min_area_ratio=0.5, distance_threshold=500):
+    """
+    Removes small/distant blobs from a YOLO segmentation mask.
+    By ChatGPT
+    """
+    # Ensure mask is uint8 binary
+    mask = (mask > 0).astype(np.uint8) * 255
+
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    print(mask.shape)
+    print(labels.shape)
+
+    if num_labels <= 1:
+        return mask
+
+    # Find largest blob (main object)
+    largest_idx = np.argmax(stats[1:, cv2.CC_STAT_AREA]) + 1
+    largest_centroid = centroids[largest_idx]
+    largest_area = stats[largest_idx, cv2.CC_STAT_AREA]
+
+    filtered_mask = np.zeros_like(mask)
+
+    for i in range(1, num_labels):
+        area = stats[i, cv2.CC_STAT_AREA]
+        centroid = centroids[i]
+        distance = np.linalg.norm(centroid - largest_centroid)
+
+        if area > largest_area * min_area_ratio and distance < distance_threshold:
+            filtered_mask[labels == i] = 255
+
+    return filtered_mask
+
 class ImageAquisition(Node):
     '''Node for aquiring the image from US probe and publishing it on the network with coresponding angle
     Extends Node'''
@@ -130,7 +162,7 @@ class ImageAquisition(Node):
         cv2.blur(frame, (3,3))
         img_arr = np.array(frame)
 
-        results = self.model.predict(frame,stream=True,conf = 0.8,task='segment', iou=0.3, verbose=False)
+        results = self.model.predict(frame,stream=True,conf = 0.8,task='segment', iou=0.3, verbose=True,show = False)
         #Process results generator
         for result in results:
             boxes = result.boxes  # Boxes object for bounding box outputs
@@ -157,11 +189,22 @@ class ImageAquisition(Node):
                 msg.vector.z = float('inf')
             else:
                 for i in range(len(masks)):
-                    mask = masks[i]
-                    contour =mask.xy[0]
-                    contour = contour.astype(np.int32)
-                    contour = contour.reshape(-1, 1, 2)
+                    
+                    # mask = masks[i]
+                    # contour =mask.xy[0]
+                    # contour = contour.astype(np.int32)
+                    # contour = contour.reshape(-1, 1, 2)
+                    # mask_new = np.zeros_like(frame[:,:,0])
+                    # cv2.drawContours(mask_new, [contour], -1, 255, thickness=-1)
+                    mask = masks.data[i].cpu().numpy()
+                    mask_new = cv2.resize(mask, (frame.shape[1], frame.shape[0]), interpolation=cv2.INTER_NEAREST)
+                    cv2.imshow("mask", mask_new)
+                    filtered_mask = filter_main_object(mask_new)
+                    contour = cv2.findContours(filtered_mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0][0]
+                    print(type(contour))
+                    cv2.drawContours(frame, [contour], -1, (255, 0, 0))
                     rect = cv2.minAreaRect(contour)
+                    print(rect)
                     msg = Vector3Stamped()
                     msg.header.stamp = stamp
                     if len(masks) > 1:
@@ -184,7 +227,7 @@ class ImageAquisition(Node):
             # keypoints = result.keypoints  # Keypoints object for pose outputs
             # probs = result.probs  # Probs object for classification outputs
             # obb = result.obb  # Oriented boxes object for OBB outputs
-            # result.show()  # display to screen
+            #result.show()  # display to screen
             
 
 

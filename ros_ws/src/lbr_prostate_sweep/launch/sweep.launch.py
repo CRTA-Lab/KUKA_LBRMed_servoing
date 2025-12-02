@@ -115,6 +115,27 @@ def generate_launch_description():
 
     ])
 
+    yolo = GroupAction([    
+    PushRosNamespace(namespace),
+
+    Node(
+        package='microsegnet_inference',
+        executable='yolo_predict',
+        output='log',
+    )
+
+    ])
+    microsegnet = GroupAction([    
+    PushRosNamespace(namespace),
+
+    Node(
+        package='microsegnet_inference',
+        executable='microsegnet_inference',
+        output='log',
+    )
+
+    ])
+
 
     ld = LaunchDescription([
             namespace_launch_arg,
@@ -127,5 +148,7 @@ def generate_launch_description():
     ld.add_action(force_comp)
     ld.add_action(robot_description)
     ld.add_action(moveit_servo)
+    ld.add_action(yolo)
+    ld.add_action(microsegnet)
 
     return ld

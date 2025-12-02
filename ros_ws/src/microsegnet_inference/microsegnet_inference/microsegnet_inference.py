@@ -35,25 +35,18 @@ class MicrosegnetNode(Node):
         self.bridge = CvBridge()
         
         #Process triggers
-        self.client_start_sweep=self.create_client(Trigger, "/sweep/start")
         self.client_change_direction=self.create_client(Trigger, "/sweep/edge_trigger",callback_group=cb_grup)
 
         #Start Trigger init
         # Create a Trigger request to start rotation
         self.client_change_direction.wait_for_service() 
-        self.client_start_sweep.wait_for_service()
-        self.get_logger().info('Connected to /sweep/start service.')
-        request = Trigger.Request()
-        self.get_logger().info('Start sweep.')                 
-        # Send the request asynchronously
-        # future = self.client_start_sweep.call_async(request)
-        # # Add a callback to handle the response
-        # future.add_done_callback(self.response_callback)
+        self.get_logger().info('Connected to /sweep/edge_trigger service.')
+        
 
         self.create_subscription(ImageMeta, '/US_image', self.read_ultrasound_callback, qos_profile=qos_profile_system_default, callback_group=cb_grup)
 
         #Microsegnet settings
-        self.MODEL_PATH="/home/racunalo/KUKA_LBRMed_servoing/ros_ws/cls_epoch_19.pth"
+        self.MODEL_PATH="/home/racunalo/KUKA_LBRMed_servoing/ros_ws/cls_epoch_21.pth"
         dir = '~/KUKA_LBRMed_servoing/logs/'
         dir = os.path.expanduser(dir)
         files = list(filter(os.path.isdir, glob.glob(dir + '*')))

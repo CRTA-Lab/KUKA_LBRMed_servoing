@@ -4,6 +4,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
 from rclpy.callback_groups import ReentrantCallbackGroup
 from std_msgs.msg import Float32
+from std_srvs.srv import Trigger
 from geometry_msgs.msg import WrenchStamped, TwistStamped, Vector3Stamped
 from rcl_interfaces.msg import SetParametersResult
 
@@ -52,7 +53,7 @@ class PID():
         self.prev = error
 
         controll = self.kp*error + self.ki*self.integral + self.kd*diff
-        return controll
+        return saturation(controll)
     
     def reset(self):
         '''Resets the PID controller.'''
@@ -98,14 +99,16 @@ class ForceCompensationNode(Node):
 
         # Fixed values for y/z PID
 
-        self.Kp = 1/50
+        self.Kp = 1/40
         self.Ki = 1/100
         self.Kd = 1/250
+        self.Kd = 0
 
 
         T = 1/200
         self.xPID_lin = PID(0.01, 0, 0.002, 1/16)
         self.xPID_conv = PID(0.009, 0, 0.001, 1/20)
+        self.xPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.zPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
@@ -131,15 +134,28 @@ class ForceCompensationNode(Node):
 
         self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
+        self.client_start_sweep=self.create_client(Trigger, "/sweep/start")
+        self.create_service(Trigger,'/sweep/initialise',self.start_sweep,qos_profile=qos_profile_system_default)
+
+        #Start Trigger init
+        # Create a Trigger request to start rotation
+        self.client_start_sweep.wait_for_service()
+        self.get_logger().info('Connected to /sweep/start service.')
+        
+
         # initialize variables
         self.twist_cmd = TwistStamped()
         self.axial_twist = 0.0
         self.use_linear_for_x = True
         self.initialised = False
+        self.initialise = False
 
         self.conv_x = 0
         self.conv_y = 0
         self.conv_w = 0
+        self.conv_r = 0
+        
+        self.hand_guiding_mode = True
 
         # initialize PID controllers
         
@@ -193,6 +209,12 @@ class ForceCompensationNode(Node):
 
         return SetParametersResult(successful=True)
 
+
+    def start_sweep(self,request:Trigger.Request,response:Trigger.Response):
+        self.hand_guiding_mode = False
+        response.success = True
+        return response
+
     def image_cb(self, msg: Float32):
         '''Callback for the position calculated from image subscriber.
         Args:        msg (Float32): message containing the position of prostate from img
@@ -200,15 +222,17 @@ class ForceCompensationNode(Node):
         #self.get_logger().info('Image position: {}'.format(msg.data))
         if not self.use_linear_for_x: return
         if not self.initialised and abs(msg.data) <= 0.1:
-            self.initialised = True
+            self.initialise = True
             self.use_linear_for_x = False
             self.axial_twist = 0.0
             self.get_logger().info('Image position initialised')
-        elif abs(msg.data) <= 0.2:
-            self.use_linear_for_x = False
-            self.axial_twist = 0.0
+            request = Trigger.Request()
+            self.get_logger().info('Start sweep.')                 
+            #future = self.client_start_sweep.call_async(request)
         else:
             self.axial_twist = self.xPID_lin.update(msg.data)
+            if self.axial_twist == 0.0:
+                self.use_linear_for_x = False
             self.get_logger().info('Using Axial element')
         return
     
@@ -217,17 +241,26 @@ class ForceCompensationNode(Node):
         Args:        msg (Vector3Stamped): message containing the position of prostate from img
         Returns:     None'''
         if not self.initialised:
-            self.conv_x = msg.vector.x
-            self.conv_y = msg.vector.y
-            self.conv_w = msg.vector.z
+            if self.initialise:
+                self.initialised = True
+                self.conv_x = msg.vector.x
+                self.conv_y = msg.vector.y
+                self.conv_w = msg.vector.z
+                self.conv_r = ((msg.vector.y-2)**2 + (msg.vector.x-490/12)**2)**0.5
             return
-        if msg.vector.x == float('inf') or abs(msg.vector.x - self.conv_x) > 5:
+        #self.get_logger().info('Radius: {}, init radius: {}'.format(((msg.vector.y-2)**2 + (msg.vector.x-490/12)**2)**0.5,self.conv_r))
+        #((msg.vector.y-2)**2 + (msg.vector.x-490/12)**2)**0.5 - self.conv_r
+        if msg.vector.x == float('inf') or abs(msg.vector.z) < 25:
             self.use_linear_for_x = True
+            self.xPID_lin.reset()
         elif not self.use_linear_for_x:
             
             self.axial_twist = self.xPID_conv.update(self.conv_w - msg.vector.z)
             self.get_logger().info('Using Convex element')
             self.get_logger().info('Convex pid output : {}'.format(self.axial_twist),throttle_duration_sec=0.5)
+        else:
+            self.use_linear_for_x = False
+            self.xPID_conv.reset()
         return
 
     def ft_callback(self, msg: WrenchStamped):
@@ -239,10 +272,16 @@ class ForceCompensationNode(Node):
         msg_out = TwistStamped()
         msg_out.header = msg.header
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
-        msg_out.twist.linear.x = self.axial_twist
-        # msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 7) + self.twist_cmd.twist.linear.y)
-        # msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
-        msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
+        if not self.hand_guiding_mode:
+            msg_out.twist.linear.x = self.axial_twist
+            msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 7) + self.twist_cmd.twist.linear.y)
+            msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
+            msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
+        else:
+            msg_out.twist.linear.x = self.xPID.update(msg.wrench.force.x)
+            msg_out.twist.linear.y = self.yPID.update(msg.wrench.force.y - 4.5)
+            msg_out.twist.linear.z = self.zPID.update(msg.wrench.force.z)
+
 
         M_y = msg.wrench.torque.y - msg.wrench.force.z * 0.33849
         M_z = msg.wrench.torque.z + msg.wrench.force.x * 0.06569 - msg.wrench.force.y * 0.33849

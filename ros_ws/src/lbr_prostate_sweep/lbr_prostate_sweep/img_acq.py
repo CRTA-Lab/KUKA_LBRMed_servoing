@@ -35,14 +35,14 @@ class ImageAquisition(Node):
         # start publisher for US image
         self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default,callback_group=self.pub_sub_cbg)
         #TODO vratiti na staro
-        #self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # timer for periodicaly captureing the image from US
         self.init_socket()
         self.create_timer(1/20,self.tcp_img_acq)
 
         #TODO vratit na staro
-        self.force_in_range = True
+        self.force_in_range = False
 
         
 

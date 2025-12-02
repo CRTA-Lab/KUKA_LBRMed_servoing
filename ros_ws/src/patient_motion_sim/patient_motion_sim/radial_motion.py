@@ -37,8 +37,10 @@ class VerticalMotion(Node):
         msg.header.stamp = self.get_clock().now().to_msg()
         time = (msg.header.stamp.sec + msg.header.stamp.nanosec*(10**(-9)))-self.init_time + math.pi/4
         time2 = (msg.header.stamp.sec + msg.header.stamp.nanosec*(10**(-9)))-self.init_time + math.pi/8
-        msg.twist.linear.y = math.cos(time/2)*((time/2/math.pi)%1>0.75)*0.3
-        msg.twist.linear.z = math.cos(time2/2)*((time2/2/math.pi)%1>0.75)*0.3
+        time3 = (msg.header.stamp.sec + msg.header.stamp.nanosec*(10**(-9)))-self.init_time + math.pi/8
+        msg.twist.linear.y = math.cos(time/2)*((time/2/math.pi)%1>0.6)*0.5
+        msg.twist.linear.z = math.cos(time2/2.2)*((time2/2.2/math.pi)%1>0.6)*0.5
+        msg.twist.linear.x = math.cos(time3/1.3)*((time3/1.3/math.pi)%1>0.7)*0.4
         self.twist_pub.publish(msg)
         try: 
             pose = self.tf_buffer.lookup_transform('lbr_link_0','lbr_link_ee',rclpy.time.Time())

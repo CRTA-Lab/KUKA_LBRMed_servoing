@@ -178,7 +178,6 @@ class SweepNode(Node):
                 msg_out.twist.angular.x = 0.0
             elif self.back_flag:
                 msg_out.twist.angular.x = -1.0
-                cv2.imwrite(f"{self.INPUT_IMAGES_DIRECTORY}/img_{msg.angle:.6f}.png",cv_image)
             else:
                 msg_out.twist.angular.x = 1.0
             #msg_out.twist.linear.x = 0.6
