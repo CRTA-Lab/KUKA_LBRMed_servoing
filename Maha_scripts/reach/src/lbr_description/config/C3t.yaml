@@ -1,0 +1,42 @@
+# Anchors
+planning_group: &planning_group arm
+collision_mesh_filename: &collision_mesh_filename package://reach_ros/demo/config/config3t.PLY
+
+optimization:
+  radius: 0.2
+  max_steps: 10
+  step_improvement_threshold: 0.01
+
+ik_solver:
+  name: MoveItIKSolver
+  distance_threshold: 0.2
+  planning_group: *planning_group
+  collision_mesh_filename: *collision_mesh_filename
+  touch_links: [lbr_link_ee]
+
+evaluator:
+  name: MultiplicativeEvaluator
+  plugins:
+    - name: ManipulabilityMoveIt
+      planning_group: *planning_group
+    - name: DistancePenaltyMoveIt
+      planning_group: *planning_group
+      distance_threshold: 0.1
+      exponent: 2
+      collision_mesh_filename: *collision_mesh_filename
+      touch_links: [lbr_link_ee]
+
+display:
+  name: ROSDisplay
+  collision_mesh_filename: *collision_mesh_filename
+  kinematic_base_frame: lbr_link_0
+  marker_scale: 0.03
+  use_full_color_range: false
+target_pose_generator:
+  name: TransformedPointCloudTargetPoseGenerator
+  pcd_file: package://reach_ros/demo/config/config3_bis.pcd
+  points_frame: lbr_link_0
+  target_frame: lbr_link_0
+
+logger:
+  name: BoostProgressConsoleLogger
