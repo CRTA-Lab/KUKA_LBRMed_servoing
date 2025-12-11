@@ -136,6 +136,17 @@ def generate_launch_description():
 
     ])
 
+    ft_sensor = GroupAction([    
+    PushRosNamespace(namespace),
+
+    Node(
+        package='data_acquisition',
+        executable='F_T_sensor',
+        output='log',
+    )
+
+    ])
+
 
     ld = LaunchDescription([
             namespace_launch_arg,
@@ -150,5 +161,6 @@ def generate_launch_description():
     ld.add_action(moveit_servo)
     ld.add_action(yolo)
     ld.add_action(microsegnet)
+    ld.add_action(ft_sensor)
 
     return ld

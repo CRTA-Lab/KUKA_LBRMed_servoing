@@ -40,7 +40,7 @@ class PID():
         Args:        error (float): new error value
         Returns:     float: control output'''
 
-        if abs(error) < 0.1:
+        if abs(error) < 0.02:
             return 0.0
 
         # discrete integral
@@ -77,11 +77,11 @@ class ForceCompensationNode(Node):
         
 
         # declare parameters for phi and theta PIDs (dynamic) (writen by copilot)
-        self.declare_parameter('1/phi_Kp', 3.0)
-        self.declare_parameter('1/phi_Ki', 20.0)
+        self.declare_parameter('1/phi_Kp', 5.0)
+        self.declare_parameter('1/phi_Ki', 30.0)
         self.declare_parameter('1/phi_Kd', 0.0)
-        self.declare_parameter('1/theta_Kp', 3.0)
-        self.declare_parameter('1/theta_Ki', 20.0)
+        self.declare_parameter('1/theta_Kp', 5.0)
+        self.declare_parameter('1/theta_Ki', 30.0)
         self.declare_parameter('1/theta_Kd', 0.0)
 
         # Get initial values for phi/theta PIDs
@@ -99,7 +99,7 @@ class ForceCompensationNode(Node):
 
         # Fixed values for y/z PID
 
-        self.Kp = 1/40
+        self.Kp = 1/25
         self.Ki = 1/100
         self.Kd = 1/250
         self.Kd = 0
@@ -114,7 +114,7 @@ class ForceCompensationNode(Node):
         self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
         self.theta_PID = PID(self.theta_Kp, self.theta_Ki, self.theta_Kd, T)
 
-        self.declare_parameter('1/Kp', 40.0)
+        self.declare_parameter('1/Kp', 30.0)
         self.declare_parameter('1/Ki', 150.0)
         self.declare_parameter('1/Kd', 0.0)
 
@@ -127,7 +127,8 @@ class ForceCompensationNode(Node):
 
 
         # create subscribers and publishers
-        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        #self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.ft_sub = self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.twist_sub = self.create_subscription(TwistStamped,'/twist_cmd',self.twist_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.image_sub = self.create_subscription(Float32,'/axial_position',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.conv_data_sub = self.create_subscription(Vector3Stamped,'/conv_element_position',self.conv_data_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
@@ -279,16 +280,16 @@ class ForceCompensationNode(Node):
             msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
         else:
             msg_out.twist.linear.x = self.xPID.update(msg.wrench.force.x)
-            msg_out.twist.linear.y = self.yPID.update(msg.wrench.force.y - 4.5)
+            msg_out.twist.linear.y = self.yPID.update(msg.wrench.force.y)
             msg_out.twist.linear.z = self.zPID.update(msg.wrench.force.z)
 
 
-        M_y = msg.wrench.torque.y - msg.wrench.force.z * 0.33849
-        M_z = msg.wrench.torque.z + msg.wrench.force.x * 0.06569 - msg.wrench.force.y * 0.33849
+        # M_y = msg.wrench.torque.y - msg.wrench.force.z * 0.33849
+        # M_z = msg.wrench.torque.z + msg.wrench.force.x * 0.06569 - msg.wrench.force.y * 0.33849
 
         #self.get_logger().info('Moment: measured: {}, corrected: {},  Force : {}'.format(msg.wrench.torque.z, M_z,msg.wrench.force.y), throttle_duration_sec=0.5)
-        # msg_out.twist.angular.y = saturation(self.phi_PID.update(M_y*4/3) + self.twist_cmd.twist.angular.y)
-        # msg_out.twist.angular.z = saturation(self.theta_PID.update(M_z*4/3) + self.twist_cmd.twist.angular.z)
+        msg_out.twist.angular.y = saturation(self.phi_PID.update(msg.wrench.torque.y) + self.twist_cmd.twist.angular.y)
+        msg_out.twist.angular.z = saturation(self.theta_PID.update(msg.wrench.torque.z) + self.twist_cmd.twist.angular.z)
 
         # self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}\n'.format(msg.header.stamp.sec,msg.header.stamp.nanosec,
         #                                                                                             msg.wrench.force.x,msg.wrench.force.y,msg.wrench.force.z,
