@@ -1,3 +1,4 @@
+from email.mime import image
 import struct
 import cv2
 import numpy as np
@@ -47,7 +48,7 @@ class ImageAquisition(Node):
         
 
         # connecting to the US
-        self.cap = cv2.VideoCapture(0)
+        #self.cap = cv2.VideoCapture(0)
         
         return
 
@@ -55,7 +56,8 @@ class ImageAquisition(Node):
     def init_socket(self):
         '''Initializes the socket connection for image reception.'''
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect(('192.168.0.150', 9999))
+        #self.sock.connect(('192.168.0.150', 9999))
+        self.sock.connect(('192.168.0.168', 9999))
         self.get_logger().info('Socket initialized.')
         return
     
@@ -127,7 +129,7 @@ class ImageAquisition(Node):
             rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
             angle = rot.as_euler('ZYX',degrees=False)[2]
         except Exception as e:
-            #self.get_logger().warning('dogodila se graska : {}'.format(e))
+            self.get_logger().warning('dogodila se graska : {}'.format(e))
             try:
                 trans = self.tf_buffer.lookup_transform(base_frame,TCP_frame,rclpy.time.Time())
 
@@ -137,7 +139,7 @@ class ImageAquisition(Node):
                 angle = rot.as_euler('ZYX',degrees=False)[2]
             # when transformation could not be obtained angle is noted sa infinite    
             except Exception as e:
-                #self.get_logger().warning('dogodila se graska : {}'.format(e))
+                self.get_logger().warning('dogodila se graska : {}'.format(e))
                 angle = float('inf')
 
         # creating an publishing the msg
@@ -146,6 +148,15 @@ class ImageAquisition(Node):
         msg.angle = angle
         msg.force_in_range = self.force_in_range
         self.img_pub.publish(msg)
+        return
+
+        #add lines for calibration
+        cv2.line(frame, (0, frame.shape[0] // 6), (frame.shape[1],  frame.shape[0] // 6), (0, 0, 255), 1)
+        cv2.line(frame, (0, 5*frame.shape[0] // 6), (frame.shape[1],  5*frame.shape[0] // 6), (0, 0, 255), 1)
+        cv2.line(frame, (frame.shape[1] // 2, 0), (frame.shape[1] // 2, frame.shape[0]), (0, 0, 255), 1)
+        cv2.line(frame, (frame.shape[1] // 6, 0), (frame.shape[1] // 6, frame.shape[0]), (0, 0, 255), 1)
+        cv2.line(frame, (5*frame.shape[1] // 6, 0), (5*frame.shape[1] // 6, frame.shape[0]), (0, 0, 255), 1)
+        cv2.imshow('Stylus with Intersection', frame)
         cv2.waitKey(1)
         return
 
@@ -201,7 +212,7 @@ class ImageAquisition(Node):
             rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
             angle = rot.as_euler('ZYX',degrees=False)[2]
         except Exception as e:
-            #self.get_logger().warning('dogodila se graska : {}'.format(e))
+            self.get_logger().warning('dogodila se graska : {}'.format(e))
             try:
                 trans = self.tf_buffer.lookup_transform(base_frame,TCP_frame,rclpy.time.Time())
 
@@ -211,7 +222,7 @@ class ImageAquisition(Node):
                 angle = rot.as_euler('ZYX',degrees=False)[2]
             # when transformation could not be obtained angle is noted sa infinite    
             except Exception as e:
-                #self.get_logger().warning('dogodila se graska : {}'.format(e))
+                self.get_logger().warning('dogodila se graska : {}'.format(e))
                 angle = float('inf')
 
         # creating an publishing the msg

@@ -39,7 +39,7 @@ class SweepNode(Node):
         # create subscription on the US_image topic
         self.img_sub = self.create_subscription(ImageMeta,'/US_image',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         # create subscription on the wrench topic 
-        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.ft_sub = self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.axial_sub = self.create_subscription(Float32,'/axial_position',self.axial_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # create publisher for moveit servo delta_twist_cmds topic
@@ -120,6 +120,7 @@ class SweepNode(Node):
         '''
         self.init_pose = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
         self.init_pose.child_frame_id = 'init_pose'
+        self.get_logger().info('Initialized pose')
         #self.init_pose.header.frame_id = 'lbr_link_0'
         return
 
@@ -187,7 +188,7 @@ class SweepNode(Node):
             self.twist_pub.publish(msg_out)
 
         # if position was not initialized, check if there is valid position data and initialize
-        elif msg.angle != float('inf') and self.start_flag:
+        elif msg.angle != float('inf') :
             self.get_logger().info('Inicijalizacija')
             self.initialize_pose()
             # msg_out = TwistStamped()

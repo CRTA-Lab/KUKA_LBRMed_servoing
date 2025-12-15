@@ -109,7 +109,7 @@ class ForceCompensationNode(Node):
         self.xPID_lin = PID(0.01, 0, 0.002, 1/16)
         self.xPID_conv = PID(0.009, 0, 0.001, 1/20)
         self.xPID = PID(self.Kp, self.Ki, self.Kd, T)
-        self.yPID = PID(self.Kp, self.Ki, self.Kd, T)
+        self.yPID = PID(self.Kp*2, self.Ki, self.Kd, T)
         self.zPID = PID(self.Kp, self.Ki, self.Kd, T)
         self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
         self.theta_PID = PID(self.theta_Kp, self.theta_Ki, self.theta_Kd, T)
@@ -275,25 +275,26 @@ class ForceCompensationNode(Node):
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
         if not self.hand_guiding_mode:
             msg_out.twist.linear.x = self.axial_twist
-            msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 7) + self.twist_cmd.twist.linear.y)
+            msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 5) + self.twist_cmd.twist.linear.y)
             msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
             msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
         else:
             msg_out.twist.linear.x = self.xPID.update(msg.wrench.force.x)
             msg_out.twist.linear.y = self.yPID.update(msg.wrench.force.y)
             msg_out.twist.linear.z = self.zPID.update(msg.wrench.force.z)
+            msg_out.twist.angular.y = saturation(self.phi_PID.update(msg.wrench.torque.y) + self.twist_cmd.twist.angular.y)
+            msg_out.twist.angular.z = saturation(self.theta_PID.update(msg.wrench.torque.z) + self.twist_cmd.twist.angular.z)
 
 
         # M_y = msg.wrench.torque.y - msg.wrench.force.z * 0.33849
         # M_z = msg.wrench.torque.z + msg.wrench.force.x * 0.06569 - msg.wrench.force.y * 0.33849
 
         #self.get_logger().info('Moment: measured: {}, corrected: {},  Force : {}'.format(msg.wrench.torque.z, M_z,msg.wrench.force.y), throttle_duration_sec=0.5)
-        msg_out.twist.angular.y = saturation(self.phi_PID.update(msg.wrench.torque.y) + self.twist_cmd.twist.angular.y)
-        msg_out.twist.angular.z = saturation(self.theta_PID.update(msg.wrench.torque.z) + self.twist_cmd.twist.angular.z)
+        
 
-        # self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}\n'.format(msg.header.stamp.sec,msg.header.stamp.nanosec,
-        #                                                                                             msg.wrench.force.x,msg.wrench.force.y,msg.wrench.force.z,
-        #                                                                                             msg.wrench.torque.x,msg.wrench.torque.y,msg.wrench.torque.z,))
+        self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}\n'.format(msg.header.stamp.sec,msg.header.stamp.nanosec,
+                                                                                                    msg.wrench.force.x,msg.wrench.force.y,msg.wrench.force.z,
+                                                                                                    msg.wrench.torque.x,msg.wrench.torque.y,msg.wrench.torque.z,))
 
         self.twist_pub.publish(msg_out)
     
