@@ -36,7 +36,7 @@ class ImageAquisition(Node):
         # start publisher for US image
         self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default,callback_group=self.pub_sub_cbg)
         #TODO vratiti na staro
-        self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # timer for periodicaly captureing the image from US
         self.init_socket()
@@ -165,7 +165,7 @@ class ImageAquisition(Node):
         '''Callback for the force-torque sensor data.
         Args:        msg (WrenchStamped): message containing the force-torque data
         Returns:     None'''
-        if 6 < msg.wrench.force.y < 8 and -1 < msg.wrench.force.z < 1:
+        if 4.5 < msg.wrench.force.y < 5.5 and -0.5 < msg.wrench.force.z < 0.5:
             self.force_in_range = True
             return
         else:

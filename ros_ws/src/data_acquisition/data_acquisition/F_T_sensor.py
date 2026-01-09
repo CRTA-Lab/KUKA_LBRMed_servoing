@@ -8,7 +8,10 @@ from NetFT import Sensor
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default
-from geometry_msgs.msg import WrenchStamped
+from geometry_msgs.msg import WrenchStamped, Vector3Stamped, PointStamped
+from tf2_ros.buffer import Buffer, Duration
+from tf2_ros.transform_listener import TransformListener
+import tf2_geometry_msgs
 #from pynput import keyboard
 
 
@@ -17,6 +20,7 @@ class FTSEnsorNode(Node):
     TOOLS = {
         'sweep': [582,628,3403,0,0,4500],
         'hand_guiding': [582,628,703,0,0,4500],
+        'zero': [0,0,0,0,0,4500]
     }
     def __init__(self, sensor_ip):
 
@@ -24,15 +28,32 @@ class FTSEnsorNode(Node):
 
         super().__init__('ft_sensor_node')
         #self.sensor = Sensor(sensor_ip)
+
+        self.initialised = False
+
+        # self.tf_buffer = Buffer()
+        # self.tf_listener = TransformListener(self.tf_buffer, self)
+        # self.base_frame = 'lbr_link_0'
+        # self.TCP_frame = 'lbr_link_ee'
+        
+        
+
+        # self.gravity_vector_static = Vector3Stamped()
+        # self.gravity_vector = PointStamped()
+        # self.gravity_vector_static.header.frame_id = 'lbr_link_0'
+        # #self.gravity_vector_static.header.stamp = 0
+        # self.gravity_vector_static.vector.z = -1.0
+        #self.tf_buffer.transform(self.gravity_vector, 'lbr_link_ee')
         self.zero = [0]*6
         self.sensor_com_init(sensor_ip)
-        self.change_tool_transform('hand_guiding')
+        self.change_tool_transform('zero')
         self.read_calib_info()
-        self.tare_sensor()
+        #self.tare_sensor()
         self.get_logger().info('F/T sensor initialized')
         #self.zero = self.sensor.getMeasurement()
         self.timer = self.create_timer(1.0 / FORCE_HZ, self.timer_callback)
         self.publisher_ = self.create_publisher(WrenchStamped,'ft_sensor_data',qos_profile_system_default)
+        return
 
     def sensor_com_init(self,ip):
         self.sensor_com = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -61,6 +82,11 @@ class FTSEnsorNode(Node):
         return
     
     def read_FT(self):
+        # if self.initialised:
+        #     #self.gravity_vector_static.header.stamp = self.get_clock().now().to_msg()            
+        #     self.gravity_vector = self.tf_buffer.transform(self.gravity_vector_static, self.TCP_frame, timeout=Duration(seconds=1/15))
+        #     print(self.gravity_vector)
+        # else:return 
         comand = struct.pack('>B15BII',0,*[0]*15,0,0)
         self.sensor_com.send(comand)
         msg = self.sensor_com.recv(1024)
@@ -68,6 +94,9 @@ class FTSEnsorNode(Node):
 
         data = msg_unpacked[2:]
 
+        # fy = -data[0]/self.force_units*self.scaling_factors[0] - self.zero[1] - self.gravity_vector.vector.y * 7
+        # fz = -data[1]/self.force_units*self.scaling_factors[1] - self.zero[2] - self.gravity_vector.vector.z * 7
+        # fx = data[2]/self.force_units*self.scaling_factors[2] - self.zero[0] - self.gravity_vector.vector.x * 7
         fy = -data[0]/self.force_units*self.scaling_factors[0] - self.zero[1]
         fz = -data[1]/self.force_units*self.scaling_factors[1] - self.zero[2]
         fx = data[2]/self.force_units*self.scaling_factors[2] - self.zero[0]
@@ -77,8 +106,18 @@ class FTSEnsorNode(Node):
         return [fx,fy,fz,mx,my,mz]
     
     def tare_sensor(self,window = 10):
+        # if not self.initialised:
+        #     while True:
+        #         try:
+        #             trans = self.tf_buffer.lookup_transform("lbr_link_0","lbr_link_ee",rclpy.time.Time())
+        #             break
+        #         except Exception as e:
+        #             self.get_logger().error(f'TF lookup error: {e}')
+        #             self.get_logger().info('Waiting for TF between lbr_link_0 and lbr_link_ee')
+        #             time.sleep(0.5)
+        #     self.initialised = True
+        self.zero = [0]*6
         if not window:
-            self.zero = [0]*6
             return
         fx = 0
         fy = 0
@@ -124,11 +163,27 @@ def main():
     sensor_ip = '192.168.0.199'
 
     ft_sensor_node = FTSEnsorNode(sensor_ip)
-    while rclpy.ok():
-        rclpy.spin_once(ft_sensor_node, timeout_sec=0.1)
+
+    # Spin until TF is available
+    # while rclpy.ok():
+    #     rclpy.spin_once(ft_sensor_node, timeout_sec=0.1)
+    #     try:
+    #         ft_sensor_node.tf_buffer.lookup_transform(
+    #             "lbr_link_0",
+    #             "lbr_link_ee",
+    #             rclpy.time.Time()
+    #         )
+    #         break
+    #     except Exception:
+    #         pass
+    # time.sleep(1.0)  # Give some time to settle
+    ft_sensor_node.tare_sensor()
+
+    rclpy.spin(ft_sensor_node)
+
     ft_sensor_node.destroy_node()
     rclpy.shutdown()
-    return
+
 
 if __name__ == '__main__':
     main()

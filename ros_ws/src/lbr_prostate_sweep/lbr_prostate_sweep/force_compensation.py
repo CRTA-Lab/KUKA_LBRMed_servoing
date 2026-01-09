@@ -40,7 +40,7 @@ class PID():
         Args:        error (float): new error value
         Returns:     float: control output'''
 
-        if abs(error) < 0.02:
+        if abs(error) < 0.05:
             return 0.0
 
         # discrete integral
@@ -77,11 +77,11 @@ class ForceCompensationNode(Node):
         
 
         # declare parameters for phi and theta PIDs (dynamic) (writen by copilot)
-        self.declare_parameter('1/phi_Kp', 5.0)
-        self.declare_parameter('1/phi_Ki', 30.0)
+        self.declare_parameter('1/phi_Kp', 3.0)
+        self.declare_parameter('1/phi_Ki', 50.0)
         self.declare_parameter('1/phi_Kd', 0.0)
-        self.declare_parameter('1/theta_Kp', 5.0)
-        self.declare_parameter('1/theta_Ki', 30.0)
+        self.declare_parameter('1/theta_Kp', 3.0)
+        self.declare_parameter('1/theta_Ki', 50.0)
         self.declare_parameter('1/theta_Kd', 0.0)
 
         # Get initial values for phi/theta PIDs
@@ -99,9 +99,9 @@ class ForceCompensationNode(Node):
 
         # Fixed values for y/z PID
 
-        self.Kp = 1/25
+        self.Kp = 1/20
         self.Ki = 1/100
-        self.Kd = 1/250
+        self.Kd = 1/200
         self.Kd = 0
 
 
@@ -189,24 +189,24 @@ class ForceCompensationNode(Node):
                 else:
                     self.theta_Kd = 1/param.value
                 self.theta_PID.kd = self.theta_Kd
-            elif param.name == '1/Kp':
-                self.Kp = 1/param.value
-                self.yPID.kp = self.Kp
-                self.zPID.kp = self.Kp
-            elif param.name == '1/Ki':
-                if param.value == 0.0:
-                    self.Ki = 0.0
-                else:
-                    self.Ki = 1/param.value
-                self.yPID.ki = self.Ki
-                self.zPID.ki = self.Ki
-            elif param.name == '1/Kd':
-                if param.value == 0.0:
-                    self.Kd = 0.0
-                else:
-                    self.Kd = 1/param.value
-                self.yPID.kd = self.Kd
-                self.zPID.kd = self.Kd
+            # elif param.name == '1/Kp':
+            #     self.Kp = 1/param.value
+            #     self.yPID.kp = self.Kp
+            #     self.zPID.kp = self.Kp
+            # elif param.name == '1/Ki':
+            #     if param.value == 0.0:
+            #         self.Ki = 0.0
+            #     else:
+            #         self.Ki = 1/param.value
+            #     self.yPID.ki = self.Ki
+            #     self.zPID.ki = self.Ki
+            # elif param.name == '1/Kd':
+            #     if param.value == 0.0:
+            #         self.Kd = 0.0
+            #     else:
+            #         self.Kd = 1/param.value
+            #     self.yPID.kd = self.Kd
+            #     self.zPID.kd = self.Kd
 
         return SetParametersResult(successful=True)
 
@@ -274,7 +274,7 @@ class ForceCompensationNode(Node):
         msg_out.header = msg.header
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
         if not self.hand_guiding_mode:
-            msg_out.twist.linear.x = self.axial_twist
+            #msg_out.twist.linear.x = self.axial_twist
             msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 5) + self.twist_cmd.twist.linear.y)
             msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
             msg_out.twist.angular.x = self.twist_cmd.twist.angular.x

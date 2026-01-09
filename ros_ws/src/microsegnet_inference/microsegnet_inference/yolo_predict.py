@@ -76,7 +76,7 @@ class ImageAquisition(Node):
 
         self.force_in_range = False
 
-        model_path = '/home/racunalo/KUKA_LBRMed_servoing/ros_ws/src/microsegnet_inference/resource/best_siki_5.pt'
+        model_path = '/home/racunalo/KUKA_LBRMed_servoing/ros_ws/src/microsegnet_inference/resource/Urethra_model_v2.pt'
         self.model = YOLO(model_path)  # pretrained YOLO11n model
 
         self.key = 0
@@ -162,7 +162,7 @@ class ImageAquisition(Node):
         cv2.blur(frame, (3,3))
         img_arr = np.array(frame)
 
-        results = self.model.predict(frame,stream=True,conf = 0.8,task='segment', iou=0.3, verbose=True,show = False)
+        results = self.model.predict(frame,stream=True,conf = 0.5,task='segment', iou=0.1, verbose=True,show = False)
         #Process results generator
         for result in results:
             boxes = result.boxes  # Boxes object for bounding box outputs
