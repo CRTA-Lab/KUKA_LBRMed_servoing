@@ -10,3 +10,4 @@ ros_ws/cls_epoch_9.pth
 ros_ws/cls_epoch_19.pth
 ros_ws/cls_epoch_21.pth
 *.pyc
+nditracker_logs
