@@ -29,6 +29,7 @@ class MicrosegnetNode(Node):
 
         #Ultrasound image subscriber
         
+        # TODO dodati service koji će pratiti broj sweepa i dodati ga u ime folderas
 
         self.position_publisher = self.create_publisher(Float32, '/axial_position', qos_profile=qos_profile_system_default, callback_group=cb_grup)
         self.position = 0.0
@@ -36,6 +37,10 @@ class MicrosegnetNode(Node):
         
         #Process triggers
         self.client_change_direction=self.create_client(Trigger, "/sweep/edge_trigger",callback_group=cb_grup)
+
+        self.sweep_no = 0
+        self.frame_no = 0
+        self.create_service(Trigger,'/microsegnet/increment_sweep',self.increment_sweep,qos_profile=qos_profile_system_default,callback_group=cb_grup)
 
         #Start Trigger init
         # Create a Trigger request to start rotation
@@ -57,6 +62,7 @@ class MicrosegnetNode(Node):
         self.OUTPUT_MASKS_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/output_images"
         self.OUTPUT_SEGMENTATIONS_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/output_segmentations"
         
+        
 
         if os.path.exists(MAIN_DIRECTORY_NAME):
             shutil.rmtree(MAIN_DIRECTORY_NAME)
@@ -64,6 +70,7 @@ class MicrosegnetNode(Node):
         os.makedirs(self.OUTPUT_MASKS_DIRECTORY, exist_ok=True)  # Create directory if it doesn't exist
         os.makedirs(self.OUTPUT_SEGMENTATIONS_DIRECTORY, exist_ok=True) 
         os.makedirs(self.INPUT_IMAGES_DIRECTORY, exist_ok=True) 
+        self.data_logger = open(f'{MAIN_DIRECTORY_NAME}/img_data.log', 'w')
 
         #Define arguments for MicroSegNet model initialization
         parser = argparse.ArgumentParser()
@@ -106,6 +113,17 @@ class MicrosegnetNode(Node):
         #Start recording flag
         self.start_recording=False
         self.trigger_counter=0
+        return
+    
+    def increment_sweep(self,request:Trigger.Request,response:Trigger.Response):
+        '''Callback for the service to increment the sweep number.
+        Args:        request (Trigger.Request): service request
+                     response (Trigger.Response): service response
+        Returns:     Trigger.Response: service response'''
+        self.sweep_no += 1
+        self.frame_no = 0
+        response.success = True
+        return response
 
     #Read the data callback
     def read_ultrasound_callback(self, msg):
@@ -247,11 +265,11 @@ class MicrosegnetNode(Node):
                 #Smooth the conoturs and store them
                 prediction[:] = 0  
                 cv2.drawContours(prediction, contours, 0, (255,255,255),-1)
-                output_mask_path = os.path.join(self.OUTPUT_MASKS_DIRECTORY, f"slice_{self.image_angle:.6f}.png")
+                output_mask_path = os.path.join(self.OUTPUT_MASKS_DIRECTORY, f"slice_{self.sweep_no}_{self.frame_no}.png")
 
                 
                 if self.start_recording and msg.force_in_range:
-                     output_path_original_image= os.path.join(self.INPUT_IMAGES_DIRECTORY, f"original_{self.image_angle:.6f}.png")
+                     output_path_original_image= os.path.join(self.INPUT_IMAGES_DIRECTORY, f"original_{self.sweep_no}_{self.frame_no}.png")
                      cv2.imwrite(output_path_original_image, self.cv2_image)
 
                      
@@ -267,7 +285,7 @@ class MicrosegnetNode(Node):
                     #self.get_logger().info(f'Distance: {self.cv2_image.shape[1]/2 - (x + w/2):.2f} px')
                 self.position_publisher.publish(Float32(data=self.position))
                 cv2.imshow("Segmentation", self.cv2_image)
-                output_segmentation_path = os.path.join(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f"segmentation_{self.image_angle:.6f}.png")
+                output_segmentation_path = os.path.join(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f"segmentation_{self.sweep_no}_{self.frame_no}.png")
                 
 
                 
@@ -280,6 +298,8 @@ class MicrosegnetNode(Node):
                 if self.start_recording and msg.force_in_range:
                     cv2.imwrite(output_mask_path, prediction)
                     cv2.imwrite(output_segmentation_path, self.cv2_image)
+                    self.data_logger.write('{},{},{},{},{},{}\n'.format(self.sweep_no,self.frame_no,self.image_angle,msg.x,msg.y,msg.z))
+                    self.frame_no += 1
                 cv2.waitKey(1)
 
     def response_callback(self, future):
@@ -296,9 +316,12 @@ class MicrosegnetNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     microsegnet_node = MicrosegnetNode()
-    rclpy.spin(microsegnet_node)
-    microsegnet_node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(microsegnet_node)
+    finally:
+        microsegnet_node.data_logger.close()
+        microsegnet_node.destroy_node()
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

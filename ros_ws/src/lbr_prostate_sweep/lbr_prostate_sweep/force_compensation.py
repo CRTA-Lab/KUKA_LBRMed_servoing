@@ -5,8 +5,13 @@ from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
 from rclpy.callback_groups import ReentrantCallbackGroup
 from std_msgs.msg import Float32
 from std_srvs.srv import Trigger
+from custom_interfaces.srv import SendFloat
 from geometry_msgs.msg import WrenchStamped, TwistStamped, Vector3Stamped
 from rcl_interfaces.msg import SetParametersResult
+from tf2_ros.buffer import Buffer
+from tf2_ros import  TransformListener
+from scipy.spatial.transform import Rotation
+import time
 
 def saturation(value, limit = 1):
     '''Saturates the value to the specified limit.
@@ -73,6 +78,9 @@ class ForceCompensationNode(Node):
         data_logger_path = self.get_parameter('data_logger_path').get_parameter_value().string_value
         self.get_logger().info(f'Logging data to: {data_logger_path}')
 
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
         self.data_logger = open(data_logger_path+'force_compensation.log', 'w')
         
 
@@ -99,11 +107,16 @@ class ForceCompensationNode(Node):
 
         # Fixed values for y/z PID
 
-        self.Kp = 1/20
-        self.Ki = 1/100
-        self.Kd = 1/200
-        self.Kd = 0
 
+        # PID parameters for sensor
+        # self.Kp = 1/20
+        # self.Ki = 1/100
+        # self.Kd = 1/200
+
+        # PID parameters for estimation
+        self.Kp = 1/50
+        self.Ki = 1/200
+        self.Kd = 0.0
 
         T = 1/200
         self.xPID_lin = PID(0.01, 0, 0.002, 1/16)
@@ -127,16 +140,23 @@ class ForceCompensationNode(Node):
 
 
         # create subscribers and publishers
-        #self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
-        self.ft_sub = self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        # TODO this subscriber for estimation
+        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        # TODO this subscriber for sensor
+        #self.ft_sub = self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.twist_sub = self.create_subscription(TwistStamped,'/twist_cmd',self.twist_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.image_sub = self.create_subscription(Float32,'/axial_position',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
-        self.conv_data_sub = self.create_subscription(Vector3Stamped,'/conv_element_position',self.conv_data_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        #self.conv_data_sub = self.create_subscription(Vector3Stamped,'/conv_element_position',self.conv_data_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         self.client_start_sweep=self.create_client(Trigger, "/sweep/start")
-        self.create_service(Trigger,'/sweep/initialise',self.start_sweep,qos_profile=qos_profile_system_default)
+        self.create_service(Trigger,'/sweep/initialise',self.start_sweep,qos_profile=qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.create_service(Trigger,'/sweep/center_prostate',self.center_prostate,qos_profile=qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.create_service(SendFloat,'/sweep/center_urethra',self.center_urethra,qos_profile=qos_profile_system_default,callback_group=self.pub_sub_cbg)
+
+        self.client_minisweep=self.create_client(Trigger, "/minisweep/start",callback_group=self.pub_sub_cbg)
+        self.client_center_prostate=self.create_client(Trigger, "/sweep/center_prostate")
 
         #Start Trigger init
         # Create a Trigger request to start rotation
@@ -147,7 +167,7 @@ class ForceCompensationNode(Node):
         # initialize variables
         self.twist_cmd = TwistStamped()
         self.axial_twist = 0.0
-        self.use_linear_for_x = True
+        self.use_linear_for_x = False
         self.initialised = False
         self.initialise = False
 
@@ -155,6 +175,9 @@ class ForceCompensationNode(Node):
         self.conv_y = 0
         self.conv_w = 0
         self.conv_r = 0
+
+        self.center_angle = 0.0
+        self.center_urethra_flag = False
         
         self.hand_guiding_mode = True
 
@@ -205,7 +228,7 @@ class ForceCompensationNode(Node):
             #         self.Kd = 0.0
             #     else:
             #         self.Kd = 1/param.value
-            #     self.yPID.kd = self.Kd
+            #     self.yPID.kd = self.Kd 
             #     self.zPID.kd = self.Kd
 
         return SetParametersResult(successful=True)
@@ -213,6 +236,8 @@ class ForceCompensationNode(Node):
 
     def start_sweep(self,request:Trigger.Request,response:Trigger.Response):
         self.hand_guiding_mode = False
+        self.center_prostate(Trigger.Request(),Trigger.Response())
+        #self.client_center_prostate.call(Trigger.Request())
         response.success = True
         return response
 
@@ -222,19 +247,21 @@ class ForceCompensationNode(Node):
         Returns:     None'''
         #self.get_logger().info('Image position: {}'.format(msg.data))
         if not self.use_linear_for_x: return
-        if not self.initialised and abs(msg.data) <= 0.1:
-            self.initialise = True
+        # if not self.initialised and abs(msg.data) <= 0.1:
+        #     self.initialise = True
+        #     self.use_linear_for_x = False
+        #     self.axial_twist = 0.0
+        #     self.get_logger().info('Image position initialised')
+        #     request = Trigger.Request()
+        #     self.get_logger().info('Start sweep.')                 
+        #     #future = self.client_start_sweep.call_async(request)
+        # else:
+        self.axial_twist = self.xPID_lin.update(msg.data)
+        if abs(msg.data) < 0.1:
             self.use_linear_for_x = False
+            self.xPID_lin.reset()
             self.axial_twist = 0.0
-            self.get_logger().info('Image position initialised')
-            request = Trigger.Request()
-            self.get_logger().info('Start sweep.')                 
-            #future = self.client_start_sweep.call_async(request)
-        else:
-            self.axial_twist = self.xPID_lin.update(msg.data)
-            if self.axial_twist == 0.0:
-                self.use_linear_for_x = False
-            self.get_logger().info('Using Axial element')
+        self.get_logger().info('Using Axial element')
         return
     
     def conv_data_cb(self, msg: Vector3Stamped):
@@ -263,6 +290,26 @@ class ForceCompensationNode(Node):
             self.use_linear_for_x = False
             self.xPID_conv.reset()
         return
+    
+    def center_prostate(self,request:Trigger.Request,response:Trigger.Response):
+        '''Callback for the service to center the prostate.
+        Args:        request (Trigger.Request): service request
+                     response (Trigger.Response): service response
+        Returns:     Trigger.Response: service response'''
+        self.use_linear_for_x = True
+        while self.use_linear_for_x:
+            self.get_logger().info('Centering prostate...')
+            rclpy.spin_once(self,timeout_sec=0.1)
+        return response
+    
+    def center_urethra(self,request:SendFloat.Request,response:SendFloat.Response):
+        '''Callback for the service that centers the urethra in the image'''
+        
+        self.center_angle = request.data
+        self.center_urethra_flag = True
+        response.success = True
+        return response
+
 
     def ft_callback(self, msg: WrenchStamped):
         '''Callback for the force-torque sensor data.
@@ -272,18 +319,35 @@ class ForceCompensationNode(Node):
         #self.get_logger().info('Force: {}'.format(msg.wrench.force.y))
         msg_out = TwistStamped()
         msg_out.header = msg.header
+
+        if abs(msg.wrench.force.x) > 2 and not self.use_linear_for_x:
+            self.client_minisweep.call_async(Trigger.Request())
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
         if not self.hand_guiding_mode:
-            #msg_out.twist.linear.x = self.axial_twist
-            msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 5) + self.twist_cmd.twist.linear.y)
+            if self.center_urethra_flag:
+                trans = self.tf_buffer.lookup_transform('init_pose','lbr_link_ee',rclpy.time.Time())
+
+                rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+                angle = rot.as_euler('ZYX',degrees=False)[2]
+                if abs(angle - self.center_angle) < 0.001:
+                    self.center_urethra_flag = False
+                    self.get_logger().info('Urethra centered.')
+                    self.center_prostate(Trigger.Request(),Trigger.Response())
+                else:
+                    self.get_logger().info('Centering urethra: current angle: {}, target angle: {}'.format(angle,self.center_angle),throttle_duration_sec=0.2)
+                    msg_out.twist.angular.x = -saturation(20*(angle - self.center_angle))
+            else:
+                 msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
+            msg_out.twist.linear.x = self.axial_twist
+            msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 6) + self.twist_cmd.twist.linear.y)
             msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
-            msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
+           
         else:
             msg_out.twist.linear.x = self.xPID.update(msg.wrench.force.x)
-            msg_out.twist.linear.y = self.yPID.update(msg.wrench.force.y)
+            msg_out.twist.linear.y = self.yPID.update(msg.wrench.force.y-1)
             msg_out.twist.linear.z = self.zPID.update(msg.wrench.force.z)
-            msg_out.twist.angular.y = saturation(self.phi_PID.update(msg.wrench.torque.y) + self.twist_cmd.twist.angular.y)
-            msg_out.twist.angular.z = saturation(self.theta_PID.update(msg.wrench.torque.z) + self.twist_cmd.twist.angular.z)
+            # msg_out.twist.angular.y = saturation(self.phi_PID.update(msg.wrench.torque.y) + self.twist_cmd.twist.angular.y)
+            # msg_out.twist.angular.z = saturation(self.theta_PID.update(msg.wrench.torque.z) + self.twist_cmd.twist.angular.z)
 
 
         # M_y = msg.wrench.torque.y - msg.wrench.force.z * 0.33849

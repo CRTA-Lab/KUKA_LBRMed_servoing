@@ -2,10 +2,12 @@ import rclpy
 import rclpy.action
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import ReentrantCallbackGroup, MutuallyExclusiveCallbackGroup
 from tf2_ros.buffer import Buffer
 from tf2_ros import TransformListener, TransformBroadcaster
 from custom_interfaces.msg import ImageMeta
+from custom_interfaces.srv import SendFloat
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import TwistStamped, WrenchStamped
 from std_msgs.msg import Float32
@@ -19,6 +21,15 @@ import math
 import os
 import glob
 
+
+def saturation(value, limit = 1):
+    '''Saturates the value to the specified limit.
+    Args:        value (float): The value to be saturated.
+                 limit (float): The saturation limit.
+    Returns:     float: The saturated value.'''
+    if abs(value) > limit:
+        return limit * (value / abs(value))
+    return value
 
 class SweepNode(Node):
     '''Node for performing the sweep with the robot'''
@@ -35,6 +46,7 @@ class SweepNode(Node):
         self.bridge = CvBridge()
         self.pub_sub_cbg = ReentrantCallbackGroup()
         self.serv_cbg = ReentrantCallbackGroup()
+        self.mini_serv_cbg = ReentrantCallbackGroup()
         self.time_cbg = ReentrantCallbackGroup()
         # create subscription on the US_image topic
         self.img_sub = self.create_subscription(ImageMeta,'/US_image',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
@@ -48,6 +60,17 @@ class SweepNode(Node):
 
         self.start_serv = self.create_service(Trigger,'/sweep/start',self.sweep_start,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
         self.edge_serv = self.create_service(Trigger,'/sweep/edge_trigger',self.edge_triger,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
+
+        self.client_increment_sweep = self.create_client(Trigger,'/microsegnet/increment_sweep',callback_group=self.serv_cbg)
+
+        # services for urethra sweep
+        self.start_minisweep_serv = self.create_service(Trigger,'/minisweep/start',self.minisweep_start,qos_profile=qos_profile_system_default,callback_group=MutuallyExclusiveCallbackGroup())
+        self.edge_minisweep_serv = self.create_service(Trigger,'/minisweep/edge_trigger',self.mini_edge_triger,qos_profile=qos_profile_system_default,callback_group=self.mini_serv_cbg)
+        self.minisweep_sub = self.create_subscription(ImageMeta,'/US_image',self.minisweep,qos_profile_system_default,callback_group=self.mini_serv_cbg)
+
+        #self.center_urethra_serv = self.create_service(Trigger,'/minisweep/center_urethra',self.center_urethra,qos_profile=qos_profile_system_default,callback_group=self.mini_serv_cbg)
+        self.center_urethra_client = self.create_client(SendFloat,'/sweep/center_urethra',callback_group=self.mini_serv_cbg)
+        self.center_prostate_client = self.create_client(Trigger,'/sweep/center_prostate',callback_group=self.serv_cbg)
         
         # initialize transfrom listener to obtain the transformation between robot base and TCP
         self.tf_buffer = Buffer()
@@ -62,10 +85,14 @@ class SweepNode(Node):
         self.base_frame = 'lbr_link_0'
         self.TCP_frame = 'lbr_link_ee'
         self.start_flag = False
+        self.minisweep_start_flag = False
         self.end_flag = False
         self.init_pose = None
         self.back_flag = False
         self.changed_dir = False
+        self.urethra_start = 0
+        self.urethra_end = 0
+        self.sweep_no = 0
         #self.zcf = True # zero cross flag
 
         dir = '~/KUKA_LBRMed_servoing/logs/'
@@ -95,6 +122,12 @@ class SweepNode(Node):
     def sweep_start(self,request:Trigger.Request,response:Trigger.Response):
         '''Callback for the start service, sets class variable for starting the sweep to True'''
         self.start_flag = True
+        self.minisweep_start_flag = False
+        self.changed_dir = False
+        self.end_flag = False
+        self.back_flag = False
+        self.sweep_no += 1
+        #self.client_increment_sweep.call(Trigger.Request())
         self.get_logger().info('Sweep started')
         self.get_logger().info('Initial force = {}'.format(self.wrench))
         response.success = True
@@ -110,6 +143,72 @@ class SweepNode(Node):
             
         else:
             self.changed_dir = True
+        response.success = True
+        return response
+    
+    def minisweep_start(self,request:Trigger.Request,response:Trigger.Response):
+        '''Callback for the start service, sets class variable for starting the sweep to True'''
+        if self.minisweep_start_flag:
+            response.success = False
+            return response
+        self.get_logger().info('Mini sweep initialization')
+
+        trans = self.tf_buffer.lookup_transform('init_pose','lbr_link_ee',rclpy.time.Time())
+
+        rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+        angle = rot.as_euler('ZYX',degrees=False)[2]
+        if angle > 0:
+            self.back_flag = True
+        else:   
+            self.back_flag = False
+
+        
+        self.get_logger().info('Mini sweep started')
+        self.start_flag = False
+        self.urethra_start = 0
+        self.urethra_end = 0
+        self.minisweep_start_flag = True
+        self.changed_dir = False
+        self.end_flag = False
+        response.success = True
+        return response
+    
+    def mini_edge_triger(self,request:Trigger.Request,response:Trigger.Response):
+        '''Callback for the service when end of the urethra is detected'''
+        if not self.minisweep_start_flag:
+            response.success = False
+            return response
+        if self.changed_dir:
+            self.end_flag = True
+            response.success = True
+            self.get_logger().info('Mini sweep ended')
+            return response
+            #self.destroy_subscription(self.minisweep_sub)
+        self.back_flag = not self.back_flag
+        self.changed_dir = True
+        self.get_logger().info('Mini sweep changed directon')
+        response.success = True
+        return response
+    
+    def center_urethra(self,request:Trigger.Request,response:Trigger.Response):
+        '''Callback for the service that centers the urethra in the image'''
+        center_angle = (self.urethra_start + self.urethra_end)/2
+        trans = self.tf_buffer.lookup_transform('init_pose','lbr_link_ee',rclpy.time.Time())
+
+        rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+        angle = rot.as_euler('ZYX',degrees=False)[2]
+        while abs(angle - center_angle) > 0.01:
+            self.get_logger().info('Centering urethra, current angle: {}, target angle: {}'.format(angle, center_angle))
+            msg_out = TwistStamped()
+            msg_out.header.stamp = self.get_clock().now().to_msg()
+            msg_out.twist.angular.x = saturation((center_angle - angle)*5)
+            self.twist_pub.publish(msg_out)
+
+            trans = self.tf_buffer.lookup_transform('init_pose','lbr_link_ee',rclpy.time.Time())
+
+            rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+            angle = rot.as_euler('ZYX',degrees=False)[2]
+            self.executor.spin_once(timeout_sec=0.02)
         response.success = True
         return response
 
@@ -166,7 +265,8 @@ class SweepNode(Node):
                 msg_out.header.stamp = self.get_clock().now().to_msg()
                 self.twist_pub.publish(msg_out)
                 self.get_logger().info('Sweep finished, stoping subscription')
-                self.destroy_subscription(self.img_sub)
+                self.client_increment_sweep.call_async(Trigger.Request())
+                #self.destroy_subscription(self.img_sub)
                 return
             #self.get_logger().info('Slice angle = {}'.format(msg.angle))
             #self.get_logger().info('Force applied = {}'.format(math.sqrt(self.wrench.wrench.force.y**2 + self.wrench.wrench.force.z**2)))
@@ -177,13 +277,14 @@ class SweepNode(Node):
             cv_image = self.bridge.imgmsg_to_cv2(msg.image)
             if not msg.force_in_range:
                 msg_out.twist.angular.x = 0.0
+                self.get_logger().info('Force out of range, stopping motion')
             elif self.back_flag:
                 msg_out.twist.angular.x = -1.0
             else:
                 msg_out.twist.angular.x = 1.0
             #msg_out.twist.linear.x = 0.6
             msg_out.header.stamp = self.get_clock().now().to_msg()
-            #msg_out.header.frame_id = self.TCP_frame
+            msg_out.header.frame_id = self.TCP_frame
             # TODO odkomentirati za stvarni rad
             self.twist_pub.publish(msg_out)
 
@@ -203,6 +304,35 @@ class SweepNode(Node):
         cv2.imshow('image',cv_image)
         cv2.waitKey(1)
 
+    def minisweep(self,msg:ImageMeta):
+        if not self.minisweep_start_flag: return
+        msg_out = TwistStamped()
+        if self.changed_dir and not self.urethra_start:
+            self.urethra_start = msg.angle
+        if self.end_flag:
+            msg_out.twist.angular.x = 0.0
+            msg_out.header.stamp = self.get_clock().now().to_msg()
+            self.twist_pub.publish(msg_out)
+            self.minisweep_start_flag = False
+            self.urethra_end = msg.angle
+            self.center_urethra_client.call_async(SendFloat.Request(data=(self.urethra_start + self.urethra_end)/2))
+            #self.center_prostate_client.call_async(Trigger.Request())
+            return
+            
+        cv_image = self.bridge.imgmsg_to_cv2(msg.image)
+        if not msg.force_in_range:
+            msg_out.twist.angular.x = 0.0
+        elif self.back_flag:
+            msg_out.twist.angular.x = -1.0
+        else:
+            msg_out.twist.angular.x = 1.0
+        #msg_out.twist.linear.x = 0.6
+        msg_out.header.stamp = self.get_clock().now().to_msg()
+        #msg_out.header.frame_id = self.TCP_frame
+        # TODO odkomentirati za stvarni rad
+        self.twist_pub.publish(msg_out)
+
+
 
 
 
@@ -210,11 +340,20 @@ def main():
     '''main function, starts the node and spins it'''
     rclpy.init()
 
+    
+
     node = SweepNode()
 
-    while rclpy.ok():
-        rclpy.spin_once(node,timeout_sec=0.1)
-    node.destroy_node()
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
+
+
+    try:
+        executor.spin()
+    finally:
+        executor.shutdown()
+        node.destroy_node()
+        rclpy.shutdown()
     return
    
 
