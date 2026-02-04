@@ -40,6 +40,8 @@ def main():
     os.makedirs('/home/racunalo/KUKA_LBRMed_servoing/nditracker_logs/{}'.format(time.strftime("%Y-%m-%d_%H-%M-%S")))
     log_file = open('/home/racunalo/KUKA_LBRMed_servoing/nditracker_logs/{}/probe_movement.log'.format(time.strftime("%Y-%m-%d_%H-%M-%S")),'w')
     time_start = time.time()
+    nan_counter = 0
+    data_counter = 0
     while True:
         try:
             port_handles, timestamps, framenumbers, tracking, quality = tracker.get_frame()
@@ -55,11 +57,22 @@ def main():
                 transform[0:3] = transform_mat[0:3,3]
                 transform[3:6] = rot_quat
 
+                if np.isnan(transform).any():
+                    nan_counter += 1
+                else:
+                    data_counter += 1
+
 
                 log_file.write('{:.6f}, {}, {}, {}, {}, {}, {}\n'.format(time_now,
                                                                                transform[0],transform[1],transform[2],
                                                                                 transform[3],transform[4],transform[5]))
         except KeyboardInterrupt:
+            time_now = time.time() - time_start
+            log_file.write('#TOTAL TIME: {:.6f} seconds\n'.format(time_now))
+            log_file.write('#TOTAL FRAMES: {}\n'.format(data_counter + nan_counter))
+            log_file.write('#VALID FRAMES: {}\n'.format(data_counter))
+            log_file.write('#NAN FRAMES: {}\n'.format(nan_counter))
+            log_file.write('#NAN PERCENTAGE: {:.2f} %\n'.format((nan_counter/(data_counter + nan_counter))*100))
             log_file.close()
             tracker.stop_tracking()
             return
