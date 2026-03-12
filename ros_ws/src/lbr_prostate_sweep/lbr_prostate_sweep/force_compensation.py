@@ -6,10 +6,11 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from std_msgs.msg import Float32
 from std_srvs.srv import Trigger
 from custom_interfaces.srv import SendFloat
-from geometry_msgs.msg import WrenchStamped, TwistStamped, Vector3Stamped
+from geometry_msgs.msg import WrenchStamped, TwistStamped
 from rcl_interfaces.msg import SetParametersResult
 from tf2_ros.buffer import Buffer
 from tf2_ros import  TransformListener
+from tf2_geometry_msgs import Vector3Stamped
 from scipy.spatial.transform import Rotation
 import time
 
@@ -141,11 +142,16 @@ class ForceCompensationNode(Node):
 
         # create subscribers and publishers
         # TODO this subscriber for estimation
-        self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
-        # TODO this subscriber for sensor
+        #self.ft_sub = self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        # TODO this subscriber for ATI sensor
         #self.ft_sub = self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        # TODO this subscirber for BOTA sensor
+        self.ft_sub = self.create_subscription(WrenchStamped,'/bota_driver_node/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+
+
         self.twist_sub = self.create_subscription(TwistStamped,'/twist_cmd',self.twist_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         self.image_sub = self.create_subscription(Float32,'/axial_position',self.image_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.force_pub = self.create_publisher(WrenchStamped,'/transformed_force',qos_profile_system_default,callback_group=self.pub_sub_cbg)
         #self.conv_data_sub = self.create_subscription(Vector3Stamped,'/conv_element_position',self.conv_data_cb,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_system_default,callback_group=self.pub_sub_cbg)
@@ -162,6 +168,11 @@ class ForceCompensationNode(Node):
         # Create a Trigger request to start rotation
         self.client_start_sweep.wait_for_service()
         self.get_logger().info('Connected to /sweep/start service.')
+
+        self.client_tare_sensor = self.create_client(Trigger, "/bota_driver_node/tare",callback_group=self.pub_sub_cbg)
+        self.client_tare_sensor.wait_for_service()
+        future = self.client_tare_sensor.call_async(Trigger.Request())
+        self.get_logger().info('Tare command sent to BOTA sensor.')
         
 
         # initialize variables
@@ -180,6 +191,10 @@ class ForceCompensationNode(Node):
         self.center_urethra_flag = False
         
         self.hand_guiding_mode = True
+        
+        while not future.done():
+            rclpy.spin_once(self,timeout_sec=0.1)
+        self.get_logger().info('BOTA sensor tared successfully.')
 
         # initialize PID controllers
         
@@ -319,9 +334,22 @@ class ForceCompensationNode(Node):
         #self.get_logger().info('Force: {}'.format(msg.wrench.force.y))
         msg_out = TwistStamped()
         msg_out.header = msg.header
+        msg_out.header.frame_id = 'lbr_link_ee'
 
-        if abs(msg.wrench.force.x) > 2 and not self.use_linear_for_x:
-            self.client_minisweep.call_async(Trigger.Request())
+
+        force_trans = Vector3Stamped()
+        force_trans.header = msg_out.header
+        force_trans.vector.x = msg.wrench.force.z
+        force_trans.vector.y = -msg.wrench.force.x * 0.70710678 + msg.wrench.force.y * 0.70710678
+        force_trans.vector.z = -msg.wrench.force.x * 0.70710678 - msg.wrench.force.y * 0.70710678
+
+        force_msg = WrenchStamped()
+        force_msg.header = force_trans.header
+        force_msg.wrench.force = force_trans.vector
+        self.force_pub.publish(force_msg)
+
+        # if abs(msg.wrench.force.x) > 2 and not self.use_linear_for_x:
+        #     self.client_minisweep.call_async(Trigger.Request())
         #msg_out.twist.linear.x = saturation(self.xPID.update(msg.wrench.force.x) + self.twist_cmd.twist.linear.x)
         if not self.hand_guiding_mode:
             if self.center_urethra_flag:
@@ -343,9 +371,9 @@ class ForceCompensationNode(Node):
             msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
            
         else:
-            msg_out.twist.linear.x = self.xPID.update(msg.wrench.force.x)
-            msg_out.twist.linear.y = self.yPID.update(msg.wrench.force.y-1)
-            msg_out.twist.linear.z = self.zPID.update(msg.wrench.force.z)
+            msg_out.twist.linear.x = self.xPID.update(force_trans.vector.x)
+            msg_out.twist.linear.y = self.yPID.update(force_trans.vector.y)
+            msg_out.twist.linear.z = self.zPID.update(force_trans.vector.z)
             # msg_out.twist.angular.y = saturation(self.phi_PID.update(msg.wrench.torque.y) + self.twist_cmd.twist.angular.y)
             # msg_out.twist.angular.z = saturation(self.theta_PID.update(msg.wrench.torque.z) + self.twist_cmd.twist.angular.z)
 
