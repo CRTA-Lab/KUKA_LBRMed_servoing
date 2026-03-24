@@ -109,15 +109,20 @@ class ForceCompensationNode(Node):
         # Fixed values for y/z PID
 
 
-        # PID parameters for sensor
+        # PID parameters for ATI sensor
         # self.Kp = 1/20
         # self.Ki = 1/100
         # self.Kd = 1/200
 
+        # PID parameters for BOTA sensor
+        self.Kp = 1/30
+        self.Ki = 1/150
+        self.Kd = 0
+
         # PID parameters for estimation
-        self.Kp = 1/50
-        self.Ki = 1/200
-        self.Kd = 0.0
+        # self.Kp = 1/50
+        # self.Ki = 1/200
+        # self.Kd = 0.0
 
         T = 1/200
         self.xPID_lin = PID(0.01, 0, 0.002, 1/16)
@@ -128,9 +133,9 @@ class ForceCompensationNode(Node):
         self.phi_PID = PID(self.phi_Kp, self.phi_Ki, self.phi_Kd, T)
         self.theta_PID = PID(self.theta_Kp, self.theta_Ki, self.theta_Kd, T)
 
-        self.declare_parameter('1/Kp', 30.0)
-        self.declare_parameter('1/Ki', 150.0)
-        self.declare_parameter('1/Kd', 0.0)
+        # self.declare_parameter('1/Kp', 30.0)
+        # self.declare_parameter('1/Ki', 100.0)
+        # self.declare_parameter('1/Kd', 0.0)
 
         # self.Kp = 1/self.get_parameter('1/Kp').get_parameter_value().double_value
         # self.Ki = 1/self.get_parameter('1/Ki').get_parameter_value().double_value
@@ -227,24 +232,24 @@ class ForceCompensationNode(Node):
                 else:
                     self.theta_Kd = 1/param.value
                 self.theta_PID.kd = self.theta_Kd
-            # elif param.name == '1/Kp':
-            #     self.Kp = 1/param.value
-            #     self.yPID.kp = self.Kp
-            #     self.zPID.kp = self.Kp
-            # elif param.name == '1/Ki':
-            #     if param.value == 0.0:
-            #         self.Ki = 0.0
-            #     else:
-            #         self.Ki = 1/param.value
-            #     self.yPID.ki = self.Ki
-            #     self.zPID.ki = self.Ki
-            # elif param.name == '1/Kd':
-            #     if param.value == 0.0:
-            #         self.Kd = 0.0
-            #     else:
-            #         self.Kd = 1/param.value
-            #     self.yPID.kd = self.Kd 
-            #     self.zPID.kd = self.Kd
+            elif param.name == '1/Kp':
+                self.Kp = 1/param.value
+                self.yPID.kp = self.Kp
+                self.zPID.kp = self.Kp
+            elif param.name == '1/Ki':
+                if param.value == 0.0:
+                    self.Ki = 0.0
+                else:
+                    self.Ki = 1/param.value
+                self.yPID.ki = self.Ki
+                self.zPID.ki = self.Ki
+            elif param.name == '1/Kd':
+                if param.value == 0.0:
+                    self.Kd = 0.0
+                else:
+                    self.Kd = 1/param.value
+                self.yPID.kd = self.Kd 
+                self.zPID.kd = self.Kd
 
         return SetParametersResult(successful=True)
 
@@ -387,7 +392,7 @@ class ForceCompensationNode(Node):
         self.data_logger.write('{}.{:09d}, {}, {}, {}, {}, {}, {}\n'.format(msg.header.stamp.sec,msg.header.stamp.nanosec,
                                                                                                     msg.wrench.force.x,msg.wrench.force.y,msg.wrench.force.z,
                                                                                                     msg.wrench.torque.x,msg.wrench.torque.y,msg.wrench.torque.z,))
-
+        
         self.twist_pub.publish(msg_out)
     
     def twist_cb(self,msg: TwistStamped): 

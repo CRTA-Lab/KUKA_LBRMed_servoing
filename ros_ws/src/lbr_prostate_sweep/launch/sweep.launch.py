@@ -154,7 +154,7 @@ def generate_launch_description():
         package='bota_driver',
         executable='bota_driver_node',
         output='log',
-        parameters=[{'config_file': 'bota_sensor_ws/bota_config.json', 'output_rate': 200}]
+        parameters=[{'config_file': 'bota_sensor_ws/bota_config.json', 'output_rate': 100}]
     )
     ])
 
@@ -165,7 +165,7 @@ def generate_launch_description():
     ])
     ld.add_action(image_acq)
     ld.add_action(servoing)
-    ld.add_action(aiming)
+    #ld.add_action(aiming)
     #ld.add_action(helper)
     ld.add_action(force_comp)
     ld.add_action(robot_description)
