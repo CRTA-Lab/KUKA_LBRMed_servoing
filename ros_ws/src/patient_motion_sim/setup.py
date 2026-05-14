@@ -26,7 +26,8 @@ setup(
             'vertical_motion=patient_motion_sim.vertical_motion:main',
             'axial_motion=patient_motion_sim.axial_motion:main',
             'horisontal_motion=patient_motion_sim.horisontal_motion:main',
-            'radial_motion=patient_motion_sim.radial_motion:main'
+            'radial_motion=patient_motion_sim.radial_motion:main',
+            'move_forward=patient_motion_sim.forward_move:main',
         ],
     },
 )

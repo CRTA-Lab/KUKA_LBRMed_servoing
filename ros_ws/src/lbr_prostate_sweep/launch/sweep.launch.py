@@ -29,7 +29,7 @@ def generate_launch_description():
         'model',
         default_value='iiwa14',
         description='Used lbr model',
-        choices=['iiwa7', 'iiwa14', 'med7', 'med14','iiwa14_tool']
+        choices=['iiwa7', 'iiwa14', 'med7', 'med14','iiwa14_tool','iiwa_14_FT']
     )
 
     mode = DeclareLaunchArgument(
@@ -147,6 +147,17 @@ def generate_launch_description():
 
     ])
 
+    bota_sensor = GroupAction([    
+    PushRosNamespace(namespace),
+
+    Node(
+        package='bota_driver',
+        executable='bota_driver_node',
+        output='log',
+        parameters=[{'config_file': 'bota_sensor_ws/bota_config.json', 'output_rate': 200}]
+    )
+    ])
+
 
     ld = LaunchDescription([
             namespace_launch_arg,
@@ -154,13 +165,14 @@ def generate_launch_description():
     ])
     ld.add_action(image_acq)
     ld.add_action(servoing)
-    ld.add_action(aiming)
+    #ld.add_action(aiming)
     #ld.add_action(helper)
     ld.add_action(force_comp)
     ld.add_action(robot_description)
     ld.add_action(moveit_servo)
-    #ld.add_action(yolo)
+    ld.add_action(yolo)
     ld.add_action(microsegnet)
     ld.add_action(ft_sensor)
+    # ld.add_action(bota_sensor)
 
     return ld

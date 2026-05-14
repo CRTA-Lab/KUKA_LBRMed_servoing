@@ -35,8 +35,10 @@ class ImageAquisition(Node):
 
         # start publisher for US image
         self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default,callback_group=self.pub_sub_cbg)
+
+        self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         #TODO vratiti na staro
-        self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        #self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # timer for periodicaly captureing the image from US
         self.init_socket()
@@ -120,9 +122,15 @@ class ImageAquisition(Node):
         ros_image = self.bridge.cv2_to_imgmsg(frame)
         ros_image.header.stamp = stamp
 
+        msg = ImageMeta()
+
         #try loop for reading the TCP transform, since node is started usualy before robot's controller at first there will be no data for transform and that will cause errors
         try:
             trans = self.tf_buffer.lookup_transform(sweep_frame,TCP_frame,rclpy.time.Time())
+
+            msg.x = trans.transform.translation.x
+            msg.y = trans.transform.translation.y
+            msg.z = trans.transform.translation.z
 
             # transforming obtained quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
             # KUKA uses zy'x'' notation of euler angles
@@ -143,10 +151,10 @@ class ImageAquisition(Node):
                 angle = float('inf')
 
         # creating an publishing the msg
-        msg = ImageMeta()
         msg.image = ros_image
         msg.angle = angle
-        msg.force_in_range = self.force_in_range
+        #msg.force_in_range = self.force_in_range
+        msg.force_in_range = True
         self.img_pub.publish(msg)
         return
 
@@ -165,7 +173,7 @@ class ImageAquisition(Node):
         '''Callback for the force-torque sensor data.
         Args:        msg (WrenchStamped): message containing the force-torque data
         Returns:     None'''
-        if 4.5 < msg.wrench.force.y < 5.5 and -0.5 < msg.wrench.force.z < 0.5:
+        if 5 < msg.wrench.force.y < 7 and -1 < msg.wrench.force.z < 1:
             self.force_in_range = True
             return
         else:

@@ -20,6 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MarkerTf.msg"
   "msg/ImageMeta.msg"
   "srv/Target.srv"
+  "srv/SendFloat.srv"
   DEPENDENCIES std_msgs
   DEPENDENCIES sensor_msgs
 )
