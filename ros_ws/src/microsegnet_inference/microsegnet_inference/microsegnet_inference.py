@@ -113,6 +113,8 @@ class MicrosegnetNode(Node):
         #Start recording flag
         self.start_recording=False
         self.trigger_counter=0
+
+        self.zcf = 0 # zero cross flag
         return
     
     def increment_sweep(self,request:Trigger.Request,response:Trigger.Response):
@@ -149,7 +151,10 @@ class MicrosegnetNode(Node):
 
         #Check if the image_angle is different to the stored angle (if they are the same, it is the same image)
         # TODO: Remove or True when done testing
-        if self.image_angle != self.angle or True:
+
+
+
+        if self.image_angle != self.angle:
             self.angle = self.image_angle
             #print(type(self.angle),flush=True)
             self.image= cv2.cvtColor(self.cv2_image, cv2.COLOR_BGR2GRAY)
@@ -179,7 +184,7 @@ class MicrosegnetNode(Node):
                     #If there is 4 frames without annotations
                     if self.blank_images_counter >= 2:
                         
-                        if self.switch_rotation==False and not self.future_flag:
+                        if self.switch_rotation==False and not self.future_flag and abs(msg.angle)>0.2617:
 
                             self.trigger_counter+=1
 

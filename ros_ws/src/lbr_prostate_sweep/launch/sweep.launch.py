@@ -27,7 +27,7 @@ def generate_launch_description():
 
     model = DeclareLaunchArgument(
         'model',
-        default_value='iiwa_14_FT',
+        default_value='iiwa14',
         description='Used lbr model',
         choices=['iiwa7', 'iiwa14', 'med7', 'med14','iiwa14_tool','iiwa_14_FT']
     )
@@ -154,7 +154,7 @@ def generate_launch_description():
         package='bota_driver',
         executable='bota_driver_node',
         output='log',
-        parameters=[{'config_file': 'bota_sensor_ws/bota_config.json', 'output_rate': 100}]
+        parameters=[{'config_file': 'bota_sensor_ws/bota_config.json', 'output_rate': 200}]
     )
     ])
 
@@ -172,7 +172,7 @@ def generate_launch_description():
     ld.add_action(moveit_servo)
     ld.add_action(yolo)
     ld.add_action(microsegnet)
-    #ld.add_action(ft_sensor)
-    ld.add_action(bota_sensor)
+    ld.add_action(ft_sensor)
+    # ld.add_action(bota_sensor)
 
     return ld

@@ -24,7 +24,7 @@ class FTSEnsorNode(Node):
     }
     def __init__(self, sensor_ip):
 
-        FORCE_HZ = 1000.0
+        FORCE_HZ = 200.0
 
         super().__init__('ft_sensor_node')
         #self.sensor = Sensor(sensor_ip)

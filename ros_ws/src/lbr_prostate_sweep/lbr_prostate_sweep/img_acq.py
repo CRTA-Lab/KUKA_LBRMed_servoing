@@ -153,7 +153,8 @@ class ImageAquisition(Node):
         # creating an publishing the msg
         msg.image = ros_image
         msg.angle = angle
-        msg.force_in_range = self.force_in_range
+        #msg.force_in_range = self.force_in_range
+        msg.force_in_range = True
         self.img_pub.publish(msg)
         return
 
