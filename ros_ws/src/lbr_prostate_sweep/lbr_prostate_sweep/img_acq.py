@@ -1,4 +1,4 @@
-from email.mime import image
+#from email.mime import image
 import struct
 import cv2
 import numpy as np
@@ -15,7 +15,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from scipy.spatial.transform import Rotation
 import socket
-
+ 
 
 
 class ImageAquisition(Node):
@@ -36,9 +36,9 @@ class ImageAquisition(Node):
         # start publisher for US image
         self.img_pub = self.create_publisher(ImageMeta,'US_image',qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
-        self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        #self.create_subscription(WrenchStamped,'/lbr/force_torque_broadcaster/wrench',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
         #TODO vratiti na staro
-        #self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
+        self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
         # timer for periodicaly captureing the image from US
         self.init_socket()
@@ -113,6 +113,7 @@ class ImageAquisition(Node):
         # cv2.line(frame, (frame.shape[1] // 6, 0), (frame.shape[1] // 6, frame.shape[0]), (0, 0, 255), 1)
         # cv2.line(frame, (5*frame.shape[1] // 6, 0), (5*frame.shape[1] // 6, frame.shape[0]), (0, 0, 255), 1)
         # cv2.imshow("US Scan", frame)
+        # cv2.waitKey(0)
         
         
         base_frame = 'lbr_link_0'
@@ -153,8 +154,8 @@ class ImageAquisition(Node):
         # creating an publishing the msg
         msg.image = ros_image
         msg.angle = angle
-        #msg.force_in_range = self.force_in_range
-        msg.force_in_range = True
+        msg.force_in_range = self.force_in_range
+        #msg.force_in_range = True
         self.img_pub.publish(msg)
         return
 
@@ -173,7 +174,7 @@ class ImageAquisition(Node):
         '''Callback for the force-torque sensor data.
         Args:        msg (WrenchStamped): message containing the force-torque data
         Returns:     None'''
-        if 5 < msg.wrench.force.y < 7 and -1 < msg.wrench.force.z < 1:
+        if 6.5 < msg.wrench.force.y < 7.5 and -1 < msg.wrench.force.z < 1:
             self.force_in_range = True
             return
         else:

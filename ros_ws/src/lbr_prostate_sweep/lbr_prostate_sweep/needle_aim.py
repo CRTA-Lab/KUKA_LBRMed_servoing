@@ -24,7 +24,7 @@ class AimNode(Node):
         # create subscription on the US_image topic
 
         # create publisher for moveit servo delta_twist_cmds topic
-        self.twist_pub = self.create_publisher(TwistStamped,'/lbr/servo_node/delta_twist_cmds',qos_profile_sensor_data,callback_group=self.pub_sub_cbg)
+        self.twist_pub = self.create_publisher(TwistStamped,'/twist_cmd',qos_profile_sensor_data,callback_group=self.pub_sub_cbg)
 
         self.target_serv = self.create_service(Target,'/sweep/target',self.store_target,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
         self.start_serv = self.create_service(Trigger,'/sweep/begin_biopsy',self.start_biopsy,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
@@ -42,6 +42,7 @@ class AimNode(Node):
         self.targets = []
         self.target_no = 0
         self.start_flag = False
+        self.target_flag = False
 
         self.get_logger().info('Init done')
         return
@@ -60,6 +61,7 @@ class AimNode(Node):
     def next_target(self,request:Trigger.Request,response:Trigger.Response):
         response.success = True
         self.target_no += 1
+        self.target_flag = False
         if self.target_no > len(self.targets):
             self.destroy_node()
         return response
@@ -76,9 +78,9 @@ class AimNode(Node):
         angle = rot.as_euler('ZYX',degrees=False)[2]
         delta = self.targets[self.target_no][2] - angle
         self.get_logger().info('Current angle: {}\tTarget angle: {}\tDelta: {}'.format(angle,self.targets[self.target_no][2],delta))
-        if abs(delta) > 0.001:
+        if abs(delta) > 0.001 and not self.target_flag:
             msg = TwistStamped()
-            ctrl = 5*delta
+            ctrl = 50*delta
             if ctrl > 1:
                 ctrl = float(1)
             elif ctrl <-1:
@@ -86,6 +88,14 @@ class AimNode(Node):
             msg.twist.angular.x = ctrl
             msg.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg)
+        elif not self.target_flag:
+            msg = TwistStamped()
+            msg.twist.angular.x = 0.0
+            msg.header.stamp = self.get_clock().now().to_msg()
+            self.twist_pub.publish(msg) 
+            self.get_logger().info('Target  reached')
+            self.get_logger().info('Rupa br : {}\tDubina : {}'.format(round(self.targets[self.target_no][1]/5, 0)+1, (60-self.targets[self.target_no][0])+82))
+            self.target_flag = True
 
 
 

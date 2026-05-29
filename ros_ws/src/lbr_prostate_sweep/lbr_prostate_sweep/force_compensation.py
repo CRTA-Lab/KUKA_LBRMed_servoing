@@ -407,7 +407,7 @@ class ForceCompensationNode(Node):
             else:
                  msg_out.twist.angular.x = self.twist_cmd.twist.angular.x
             msg_out.twist.linear.x = self.axial_twist
-            msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 6) + self.twist_cmd.twist.linear.y)
+            msg_out.twist.linear.y = saturation(self.yPID.update(msg.wrench.force.y - 7) + self.twist_cmd.twist.linear.y)
             msg_out.twist.linear.z = saturation(self.zPID.update(msg.wrench.force.z) + self.twist_cmd.twist.linear.z)
 
             # msg_out.twist.linear.y = saturation(self.yPID.update(force_trans.vector.y - 5) + self.twist_cmd.twist.linear.y)

@@ -29,7 +29,6 @@ class MicrosegnetNode(Node):
 
         #Ultrasound image subscriber
         
-        # TODO dodati service koji će pratiti broj sweepa i dodati ga u ime folderas
 
         self.position_publisher = self.create_publisher(Float32, '/axial_position', qos_profile=qos_profile_system_default, callback_group=cb_grup)
         self.position = 0.0
@@ -37,10 +36,6 @@ class MicrosegnetNode(Node):
         
         #Process triggers
         self.client_change_direction=self.create_client(Trigger, "/sweep/edge_trigger",callback_group=cb_grup)
-
-        self.sweep_no = 0
-        self.frame_no = 0
-        self.create_service(Trigger,'/microsegnet/increment_sweep',self.increment_sweep,qos_profile=qos_profile_system_default,callback_group=cb_grup)
 
         #Start Trigger init
         # Create a Trigger request to start rotation
@@ -50,27 +45,29 @@ class MicrosegnetNode(Node):
 
         self.create_subscription(ImageMeta, '/US_image', self.read_ultrasound_callback, qos_profile=qos_profile_system_default, callback_group=cb_grup)
 
+        self.segmentation_pub = self.create_publisher(ImageMeta, '/segmentation_image', qos_profile=qos_profile_system_default, callback_group=cb_grup)
+
         #Microsegnet settings
         self.MODEL_PATH="/home/racunalo/KUKA_LBRMed_servoing/ros_ws/cls_epoch_21.pth"
         dir = '~/KUKA_LBRMed_servoing/logs/'
         dir = os.path.expanduser(dir)
-        files = list(filter(os.path.isdir, glob.glob(dir + '*')))
-        files.sort(key=os.path.getmtime, reverse=True)
-        main_dir = files[0] if len(files) > 0 else dir
+        # files = list(filter(os.path.isdir, glob.glob(dir + '*')))
+        # files.sort(key=os.path.getmtime, reverse=True)
+        # main_dir = files[0] if len(files) > 0 else dir
+        main_dir = f'{dir}/zavrsna_konfa'
         MAIN_DIRECTORY_NAME=f'{main_dir}/vtk'
         self.INPUT_IMAGES_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/input_images"
         self.OUTPUT_MASKS_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/output_images"
         self.OUTPUT_SEGMENTATIONS_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/output_segmentations"
         
-        
 
         if os.path.exists(MAIN_DIRECTORY_NAME):
             shutil.rmtree(MAIN_DIRECTORY_NAME)
+        self.MAIN_DIRECTORY_NAME = MAIN_DIRECTORY_NAME
         os.makedirs(MAIN_DIRECTORY_NAME, exist_ok=True)  # Create directory if it doesn't exist
         os.makedirs(self.OUTPUT_MASKS_DIRECTORY, exist_ok=True)  # Create directory if it doesn't exist
         os.makedirs(self.OUTPUT_SEGMENTATIONS_DIRECTORY, exist_ok=True) 
         os.makedirs(self.INPUT_IMAGES_DIRECTORY, exist_ok=True) 
-        self.data_logger = open(f'{MAIN_DIRECTORY_NAME}/img_data.log', 'w')
 
         #Define arguments for MicroSegNet model initialization
         parser = argparse.ArgumentParser()
@@ -114,19 +111,6 @@ class MicrosegnetNode(Node):
         self.start_recording=False
         self.trigger_counter=0
 
-        self.zcf = 0 # zero cross flag
-        return
-    
-    def increment_sweep(self,request:Trigger.Request,response:Trigger.Response):
-        '''Callback for the service to increment the sweep number.
-        Args:        request (Trigger.Request): service request
-                     response (Trigger.Response): service response
-        Returns:     Trigger.Response: service response'''
-        self.sweep_no += 1
-        self.frame_no = 0
-        response.success = True
-        return response
-
     #Read the data callback
     def read_ultrasound_callback(self, msg):
 
@@ -151,9 +135,6 @@ class MicrosegnetNode(Node):
 
         #Check if the image_angle is different to the stored angle (if they are the same, it is the same image)
         # TODO: Remove or True when done testing
-
-
-
         if self.image_angle != self.angle:
             self.angle = self.image_angle
             #print(type(self.angle),flush=True)
@@ -182,9 +163,9 @@ class MicrosegnetNode(Node):
                     self.blank_images_counter+=1*msg.force_in_range
                     self.good_images_counter = 0
                     #If there is 4 frames without annotations
-                    if self.blank_images_counter >= 2:
+                    if self.blank_images_counter >= 2 and abs(self.image_angle) > 0.26:
                         
-                        if self.switch_rotation==False and not self.future_flag and abs(msg.angle)>0.2617:
+                        if self.switch_rotation==False and not self.future_flag:
 
                             self.trigger_counter+=1
 
@@ -192,7 +173,10 @@ class MicrosegnetNode(Node):
                                     self.start_recording=True
                             if self.trigger_counter==2:
                                     self.start_recording=False
-                                    self.trigger_counter=0
+                                    #self.trigger_counter=0
+                                    
+                                    
+
 
                             # Create a Trigger request to switch rotation 
                             request = Trigger.Request()
@@ -205,7 +189,19 @@ class MicrosegnetNode(Node):
                             # Add a callback to handle the response
                             future.add_done_callback(self.response_callback)
                             self.switch_rotation=True
-                            
+                            if self.trigger_counter==2: os.system('/home/racunalo/copy.sh ')
+                            #     sinko_dir = '/run/user/1000/gvfs/smb-share:server=synko.local,share=slike/slike_zavrsna_konfa/vtk'
+                            #     if os.path.exists(sinko_dir):
+                            #         shutil.rmtree(sinko_dir)
+                            #     #os.mkdir(sinko_dir, exist_ok=True)
+                            #     self.get_logger().info(f'Copying data to {sinko_dir}')
+                            #     ret = os.system(f'cp -r {self.MAIN_DIRECTORY_NAME} run/user/1000/gvfs/smb-share\:server\=synko.local\,share\=slike/slike_zavrsna_konfa/')
+                            #     self.get_logger().info(f'Copying data to {sinko_dir} with output {ret}')
+                            #     # shutil.copytree(self.INPUT_IMAGES_DIRECTORY, f'{sinko_dir}/input_images')
+                            #     # shutil.copytree(self.OUTPUT_MASKS_DIRECTORY, f'{sinko_dir}/output_images')
+                            #     # shutil.copytree(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f'{sinko_dir}/output')
+                            #     self.trigger_counter=0
+
                     
                     if self.start_sweep_recording==True:
                             self.start_sweep_recording=False       
@@ -270,11 +266,11 @@ class MicrosegnetNode(Node):
                 #Smooth the conoturs and store them
                 prediction[:] = 0  
                 cv2.drawContours(prediction, contours, 0, (255,255,255),-1)
-                output_mask_path = os.path.join(self.OUTPUT_MASKS_DIRECTORY, f"slice_{self.sweep_no}_{self.frame_no}.png")
+                output_mask_path = os.path.join(self.OUTPUT_MASKS_DIRECTORY, f"slice_{self.image_angle:.6f}.png")
 
                 
                 if self.start_recording and msg.force_in_range:
-                     output_path_original_image= os.path.join(self.INPUT_IMAGES_DIRECTORY, f"original_{self.sweep_no}_{self.frame_no}.png")
+                     output_path_original_image= os.path.join(self.INPUT_IMAGES_DIRECTORY, f"original_{self.image_angle:.6f}.png")
                      cv2.imwrite(output_path_original_image, self.cv2_image)
 
                      
@@ -290,7 +286,11 @@ class MicrosegnetNode(Node):
                     #self.get_logger().info(f'Distance: {self.cv2_image.shape[1]/2 - (x + w/2):.2f} px')
                 self.position_publisher.publish(Float32(data=self.position))
                 cv2.imshow("Segmentation", self.cv2_image)
-                output_segmentation_path = os.path.join(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f"segmentation_{self.sweep_no}_{self.frame_no}.png")
+                # ros_seg_img = self.bridge.cv2_to_imgmsg(self.cv2_image, encoding="bgr8")
+                # seg_msg = ImageMeta()
+                # seg_msg.image = ros_seg_img
+                # self.segmentation_pub.publish(seg_msg)
+                output_segmentation_path = os.path.join(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f"segmentation_{self.image_angle:.6f}.png")
                 
 
                 
@@ -303,8 +303,6 @@ class MicrosegnetNode(Node):
                 if self.start_recording and msg.force_in_range:
                     cv2.imwrite(output_mask_path, prediction)
                     cv2.imwrite(output_segmentation_path, self.cv2_image)
-                    self.data_logger.write('{},{},{},{},{},{}\n'.format(self.sweep_no,self.frame_no,self.image_angle,msg.x,msg.y,msg.z))
-                    self.frame_no += 1
                 cv2.waitKey(1)
 
     def response_callback(self, future):
@@ -321,12 +319,9 @@ class MicrosegnetNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     microsegnet_node = MicrosegnetNode()
-    try:
-        rclpy.spin(microsegnet_node)
-    finally:
-        microsegnet_node.data_logger.close()
-        microsegnet_node.destroy_node()
-        rclpy.shutdown()
+    rclpy.spin(microsegnet_node)
+    microsegnet_node.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()
