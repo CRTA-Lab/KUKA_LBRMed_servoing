@@ -196,5 +196,13 @@
             </frames>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.9"/>
         </toolTemplate>
+        <toolTemplate class="" name="phantom2">
+            <frames>
+                <frame id="_d3586aa3-ab0a-487d-a726-5f6f1fc7149c" name="TCP">
+                    <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
+                </frame>
+            </frames>
+            <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="110.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="2.5"/>
+        </toolTemplate>
     </objectTemplates>
 </RoboticsAPIData>

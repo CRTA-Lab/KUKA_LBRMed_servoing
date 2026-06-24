@@ -195,6 +195,9 @@
                     <measurementTranslation calculationError="0.8035636817932434" method="XYZ4Point" timestamp="1729077828738"/>
                 </frame>
             </frames>
+            <additionalInformation>
+                <info key="ID" type="java.lang.String" value="1b909757-19ae-413e-9bde-fc63f8e2f137"/>
+            </additionalInformation>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
         </toolTemplate>
         <toolTemplate class="" defaultMotionFrameRef="/TCP" name="pointer_w_marker">
@@ -206,6 +209,9 @@
                     <transformation a="0.0" b="0.0" c="0.0" x="-0.60173138734404" y="0.36495742626711963" z="148.99346362700766"/>
                 </frame>
             </frames>
+            <additionalInformation>
+                <info key="ID" type="java.lang.String" value="13187ae9-2911-42a4-8f38-1a2d522b6975"/>
+            </additionalInformation>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
         </toolTemplate>
         <toolTemplate class="" name="mock_sonda">
@@ -217,6 +223,9 @@
                     <transformation a="0.0" b="0.0" c="0.0" x="0.0" y="0.0" z="0.0"/>
                 </frame>
             </frames>
+            <additionalInformation>
+                <info key="ID" type="java.lang.String" value="e5d0394b-8ec0-4568-9be3-ff18ddccc869"/>
+            </additionalInformation>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.6"/>
         </toolTemplate>
         <toolTemplate class="" defaultMotionFrameRef="/UZV_calib" name="SonoScape_sonda">
@@ -230,6 +239,9 @@
                     <transformation a="-0.7" b="0.02" c="1.5" x="-131.6" y="120.9" z="150.7"/>
                 </frame>
             </frames>
+            <additionalInformation>
+                <info key="ID" type="java.lang.String" value="5a94509b-f784-4138-a371-6a8b9464f8c0"/>
+            </additionalInformation>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.9"/>
         </toolTemplate>
         <toolTemplate class="" defaultMotionFrameRef="/UZV_calib" name="SonoScape_sonda_V2">
@@ -259,6 +271,9 @@
                     <measurementRotation method="ABC2Point" timestamp="1746613963723"/>
                 </frame>
             </frames>
+            <additionalInformation>
+                <info key="ID" type="java.lang.String" value="37ec119e-da88-45f0-9d5b-7682c376fade"/>
+            </additionalInformation>
             <loadData cogA="0.0" cogB="0.0" cogC="0.0" cogX="0.0" cogY="0.0" cogZ="0.0" inertiaX="0.0" inertiaY="0.0" inertiaZ="0.0" mass="0.0"/>
         </toolTemplate>
     </objectTemplates>

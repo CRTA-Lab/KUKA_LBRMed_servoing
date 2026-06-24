@@ -11,8 +11,12 @@
             <Interface id="com.kuka/Controller/EtherCAT" version="0.1.0"/>
             <Interface id="com.kuka/Controller/Windows" version="0.1.18"/>
             <Interface id="com.kuka/Controller/Controller" version="0.1.0"/>
+<<<<<<< Updated upstream
             <TopologyItem itemPath="com.kuka/LBR5_7kgMed" name="LBR_Med_7_R800_1" selectedVersion="2" uniqueID="aa5e13d3-18c7-4b58-8b16-97a8a04cf634">
                 <Interface id="com.kuka/Robot/Payload" version="0.7.0"/>
+=======
+            <TopologyItem itemPath="com.kuka/LBR5_14kgMed" name="LBR_Med_14_R820_1" selectedVersion="2" uniqueID="d25db7cc-f993-46ff-bce4-d069b8556218">
+>>>>>>> Stashed changes
                 <Interface id="com.kuka/LBR5/LBRHardware" version="0.1.0"/>
                 <Interface id="com.kuka/LBR/LBR5" version="0.1.0"/>
                 <Interface id="com.kuka/LBR/Flansch" version="0.1.0"/>
@@ -44,11 +48,12 @@
                         <Value>0.0</Value>
                     </Property>
                     <Property displayName="Drehung um X-Achse in ° (C-Winkel)" key="C" regex="(-|\+)?(((1)(8)(0)((\.)(0))?)|((1)[0-7][0-9]((\.)[0-9])?)|([1-9][0-9]((\.)[0-9])?)|([0-9]((\.)[0-9])?))" showInEditor="true" showInWizard="true" type="Double">
-                        <Value>0.0</Value>
+                        <Value>-90.0</Value>
                     </Property>
                 </PropertyGroup>
             </TopologyItem>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="ApplGateAgent" installItem="true" installedVersion="NONE" itemPath="com.kuka/ApplGateAgent" selectedVersion="NONE" usage="Library"/>
+            <SoftwareItem autoSelected="false" canChangeSelection="true" displayName="ApplicationFramework" installItem="false" installedVersion="NONE" itemPath="com.kuka/ApplicationFramework" selectedVersion="NONE" usage="Feature"/>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="ApplicationHost" installItem="true" installedVersion="1.0.0" itemPath="com.kuka/ApplicationHost" selectedVersion="1.0.0" usage="Library">
                 <Interface id="com.kuka/Bundle/org.eclipse.jetty.continuation" version="8.1.15"/>
                 <Interface id="com.kuka/Bundle/org.eclipse.core.runtime" version="3.7.0"/>
@@ -139,6 +144,8 @@
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="BackupRestore GUI for smartHMI" installItem="true" installedVersion="1.2.2" itemPath="com.kuka/BackupManagerSmartHMIView" selectedVersion="1.2.2" usage="Library">
                 <Interface id="com.kuka/BackupManagerSmartHMIView/BackupManagerServiceGUI" version="1.2.2"/>
             </SoftwareItem>
+            <SoftwareItem autoSelected="false" canChangeSelection="true" displayName="KUKA Sunrise.Basic Toolbox" installItem="false" installedVersion="NONE" itemPath="com.kuka/BasicToolbox" selectedVersion="NONE" usage="Feature"/>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="KUKA Sunrise.Basic Toolbox Example Applications" installItem="false" installedVersion="NONE" itemPath="com.kuka/BasicToolboxExampleApplications" selectedVersion="NONE" usage="Feature"/>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="Cabinet" installItem="true" installedVersion="1" itemPath="com.kuka/Cabinet" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/Cabinet/CabCtrl" version="0.8.4"/>
             </SoftwareItem>
@@ -314,6 +321,7 @@
                     </Property>
                 </PropertyGroup>
             </SoftwareItem>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="SmartHMIApplicationFramework" installItem="true" installedVersion="NONE" itemPath="com.kuka/SmartHMIApplicationFramework" selectedVersion="NONE" usage="Library"/>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="SmartHMI PDS-Firmware Update" installItem="true" installedVersion="1" itemPath="com.kuka/SmartHMIPdsFirmwareUpdate" selectedVersion="1" usage="Library">
                 <Interface id="com.kuka/SmartHMIPdsFirmwareUpdate/SmartHMIPdsFirmwareUpdate" version="0.1.0"/>
             </SoftwareItem>
@@ -408,11 +416,16 @@
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="XMLSUA" installItem="true" installedVersion="1.1" itemPath="com.kuka/XMLSUA" selectedVersion="1.1" usage="Library">
                 <Interface id="com.kuka/XMLSUA/XMLSUA" version="0.1.1"/>
             </SoftwareItem>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.appframework.api" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.appframework.api" selectedVersion="NONE" usage="Library"/>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.appframework.kxrreader" installItem="true" installedVersion="1.0.0.SMedV121-0-0_17" itemPath="com.kuka/com.kuka.appframework.kxrreader" selectedVersion="1.0.0.SMedV121-0-0_17" usage="Library">
                 <Interface id="com.kuka/Bundle/com.kuka.appframework.kxrreader" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.appframework.kxrreader" version="1.0.0"/>
                 <Interface id="com.kuka/OSGi/com.kuka.appframework.kxrreader.exceptions" version="1.0.0"/>
             </SoftwareItem>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.appframework.model" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.appframework.model" selectedVersion="NONE" usage="Library"/>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.appframework.runtime" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.appframework.runtime" selectedVersion="NONE" usage="Library"/>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.appframework.service" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.appframework.service" selectedVersion="NONE" usage="Library"/>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.appframework.service.ncf" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.appframework.service.ncf" selectedVersion="NONE" usage="Library"/>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.applicationHost.server" installItem="true" installedVersion="2.0.0.RapiSMedV12_9" itemPath="com.kuka/com.kuka.applicationHost.server" selectedVersion="2.0.0.RapiSMedV12_9" usage="Library">
                 <Interface id="com.kuka/OSGi/com.kuka.util.dependentComponent" version="2.0.0"/>
                 <Interface id="com.kuka/Bundle/com.kuka.applicationHost.server" version="2.0.0"/>
@@ -480,6 +493,10 @@
                 <Interface id="com.kuka/OSGi/com.kuka.backupManager.service.ncf" version="1.2.2"/>
                 <Interface id="com.kuka/Bundle/com.kuka.backupManager.service.ncf" version="1.2.2"/>
             </SoftwareItem>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.basictoolbox" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.basictoolbox" selectedVersion="NONE" usage="Library"/>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.basictoolbox.exampleApplications" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.basictoolbox.exampleApplications" selectedVersion="NONE" usage="Library"/>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.collisiondetection" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.collisiondetection" selectedVersion="NONE" usage="Library"/>
+            <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.collisiondetection.environments" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.collisiondetection.environments" selectedVersion="NONE" usage="Library"/>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.command.api" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.command.api" selectedVersion="NONE" usage="Library"/>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.command.provider.api" installItem="true" installedVersion="NONE" itemPath="com.kuka/com.kuka.command.provider.api" selectedVersion="NONE" usage="Library"/>
             <SoftwareItem autoSelected="true" canChangeSelection="true" displayName="com.kuka.common" installItem="true" installedVersion="2.0.1.RapiSMedV12_9" itemPath="com.kuka/com.kuka.common" selectedVersion="2.0.1.RapiSMedV12_9" usage="Library">

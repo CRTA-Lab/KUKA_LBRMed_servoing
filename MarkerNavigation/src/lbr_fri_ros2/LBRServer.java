@@ -10,6 +10,7 @@ import java.util.Arrays;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
 import com.kuka.roboticsAPI.controllerModel.Controller;
 import com.kuka.roboticsAPI.deviceModel.LBR;
+import com.kuka.roboticsAPI.geometricModel.Tool;
 import com.kuka.roboticsAPI.uiModel.ApplicationDialogType;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.*;
 import com.kuka.connectivity.fastRobotInterface.*;
@@ -18,6 +19,8 @@ public class LBRServer extends RoboticsAPIApplication {
 	// members
 	private LBR lbr_;
 	private Controller lbr_controller_;
+	private Tool probe;
+
 
 	// control mode
 	private enum CONTROL_MODE {
@@ -33,7 +36,7 @@ public class LBRServer extends RoboticsAPIApplication {
 
 	// FRI parameters 
 	private String client_name_;
-	private String[] client_names_ = {"192.168.40.205", "0.0.0.0"};
+	private String[] client_names_ = {"192.168.0.109","192.168.0.166"};
 	private int send_period_;	
 	private String[] send_periods_ = {"1", "2", "5", "10"};  // send period in ms
 
@@ -83,7 +86,7 @@ public class LBRServer extends RoboticsAPIApplication {
 				control_mode_ = new JointImpedanceControlMode(200, 200, 200, 200, 200, 200, 200);
 				break;
 			case CARTESIAN_IMPEDANCE_CONTROL:
-				control_mode_ = new CartesianImpedanceControlMode();
+				control_mode_ = new CartesianImpedanceControlMode().setStiffness(1000, 1000, 1000, 100, 100, 100);
 				break;
 		}
 		getLogger().info("Control mode set to: " + control_mode.name());
@@ -101,6 +104,8 @@ public class LBRServer extends RoboticsAPIApplication {
 	public void configure_fri() {
 		fri_configuration_ = FRIConfiguration.createRemoteConfiguration(lbr_, client_name_);
 		fri_configuration_.setSendPeriodMilliSec(send_period_);
+		fri_configuration_.setPortOnController(30205);
+		fri_configuration_.setPortOnRemote(30205);
 		
         getLogger().info("Creating FRI connection to " + fri_configuration_.getHostName());
         getLogger().info(
@@ -127,7 +132,7 @@ public class LBRServer extends RoboticsAPIApplication {
         
         // try to connect
         try {
-        	fri_session_.await(10, TimeUnit.SECONDS);
+        	fri_session_.await(15, TimeUnit.SECONDS);
         } catch (final TimeoutException e) {
         	getLogger().error(e.getLocalizedMessage());
         	return;
@@ -140,6 +145,9 @@ public class LBRServer extends RoboticsAPIApplication {
 	public void initialize() {
         lbr_controller_ = (Controller) getContext().getControllers().toArray()[0];
         lbr_ = (LBR) lbr_controller_.getDevices().toArray()[0];
+        
+        probe = getApplicationData().createFromTemplate("phantom2");
+        //probe.attachTo(lbr_.getFlange());
 		
         // set FRI parameters
 		request_user_config();
@@ -152,6 +160,7 @@ public class LBRServer extends RoboticsAPIApplication {
 	@Override
 	public void run() {
 		// run the FRI
+		//probe.getFrame("TCP").move(positionHold(control_mode_, -1, TimeUnit.SECONDS).addMotionOverlay(fri_overlay_));
 		lbr_.move(positionHold(control_mode_, -1, TimeUnit.SECONDS).addMotionOverlay(fri_overlay_));			
 		return;
 	}

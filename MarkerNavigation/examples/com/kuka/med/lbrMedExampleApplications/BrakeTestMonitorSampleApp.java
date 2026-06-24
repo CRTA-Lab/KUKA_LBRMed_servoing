@@ -16,8 +16,11 @@ import com.kuka.med.cyclicBrakeTest.IBrakeTestMonitorListener;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
 import com.kuka.roboticsAPI.deviceModel.LBR;
+import com.kuka.roboticsAPI.geometricModel.Frame;
+import com.kuka.roboticsAPI.geometricModel.ObjectFrame;
 import com.kuka.roboticsAPI.motionModel.IMotionContainer;
 import com.kuka.roboticsAPI.motionModel.PTP;
+import static com.kuka.roboticsAPI.motionModel.BasicMotions.*;
 import com.kuka.roboticsAPI.uiModel.ApplicationDialogType;
 import com.kuka.task.ITaskLogger;
 
@@ -66,6 +69,10 @@ public class BrakeTestMonitorSampleApp extends RoboticsAPIApplication implements
 
     /** Additional thread to handle BrakeTestMonitorEvents with dialog boxes for user feedback. */
     private ExecutorService _workerToHandleEvent = Executors.newSingleThreadExecutor();
+    
+    private ObjectFrame frame;
+	private Frame target;
+	private JointPosition initial_pos;
 
     @Override
     public void initialize()
@@ -85,6 +92,11 @@ public class BrakeTestMonitorSampleApp extends RoboticsAPIApplication implements
                 Math.toRadians(0),
                 Math.toRadians(0),
                 Math.toRadians(0));
+       initial_pos = _lbr.getCurrentJointPosition();
+        frame = getApplicationData().getFrame("/zero_frame");
+		target = getApplicationData().getFrame("/zero_frame/sweep_point").copyWithRedundancy();
+		target.setParent(_lbr.getFlange(), false);
+		target.setParent(frame, true);
     }
 
     @Override
@@ -123,18 +135,27 @@ public class BrakeTestMonitorSampleApp extends RoboticsAPIApplication implements
                     _action = UserAction.NO_ACTION;
                 }
             }
-
+            
+            _lbr.getFlange().move(ptp(initial_pos).setJointVelocityRel(_vel));
+            //_lbr.getFlange().move(ptp(target).setJointVelocityRel(_vel));
+            
             // ******************* PTP motions to simulate the normal workflow of an application *******************
-            if (null == _mc || _mc.isFinished())
+            /*if (null == _mc || _mc.isFinished())
             {
                 // reverse angle of one joint for next motion
                 _jointPos.set(0, _jointPos.get(0) * -1.0);
                 return;
 
+<<<<<<< Updated upstream
                 //getLogger().info("PTP motion to simulate a normal application workflow is started!");
                 //
                 //_mc = _lbr.moveAsync(new PTP(_jointPos).setJointVelocityRel(_vel));
             }
+=======
+                getLogger().info("PTP motion to simulate a normal application workflow is started!");
+                _mc = _lbr.moveAsync(new PTP(_jointPos).setJointVelocityRel(_vel));
+            }*/
+>>>>>>> Stashed changes
         }
     }
 

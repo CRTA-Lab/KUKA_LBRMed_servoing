@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<KukaDeviceDescription xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" fileName="Dev_SamUserSettings.xml" fileCreator="SafeParaTrans" fileCreationDate="2019-02-27" fileCreationTime="11:41:22.6022742+01:00">
+<KukaDeviceDescription xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" fileName="Dev_SamUserSettings.xml" fileCreator="SafeParaTrans" fileCreationDate="2019-05-29" fileCreationTime="11:27:38.0154353+02:00">
   <Vendor id="24776" />
   <Device>
     <Type productID="65534" revision="0x00070032" />

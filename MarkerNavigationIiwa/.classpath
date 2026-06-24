@@ -4,89 +4,74 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="examples"/>
 	<classpathentry kind="lib" path="KUKAJavaLib/javax.inject_1.0.0.v20091030.jar"/>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.common.datatypes_1.15.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.appframework.api_1.1.0.6.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.common.datatypes_1.15.0.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.appframework.api_1.1.0.6-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.common.utilities_1.5.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.basictoolbox_1.3.0.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.common.utilities_1.5.0.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.basictoolbox_1.3.0-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.connectivity.common.JniExtractor_1.15.0.SMedV121-15-0_19.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.collisiondetection_1.3.0.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.connectivity.common.JniExtractor_1.15.0.SMedV121-15-0_19-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.collisiondetection_1.3.0-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.connectivity.directServo_1.15.0.SMedV121-15-0_19.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.common.datatypes_1.15.0.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.connectivity.directServo_1.15.0.SMedV121-15-0_19-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.common.datatypes_1.15.0.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.connectivity.fastRobotInterface_1.15.1.SMedV121-15-0_19.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.common.utilities_1.5.0.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.connectivity.fastRobotInterface_1.15.1.SMedV121-15-0_19-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.common.utilities_1.5.0.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.connectivity.smartServo_1.16.0.SMedV121-15-0_19.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.connectivity.smartServo_1.16.0.SMedV121-15-0_19-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.connectivity.smartServoLIN_1.15.0.SMedV121-15-0_19.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.connectivity.smartServoLIN_1.15.0.SMedV121-15-0_19-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.mastering.provider.api_1.5.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.mastering.provider.api_1.5.0.16.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/#Bundle-JavaDoc#!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.resource.api_1.0.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.resource.api_1.0.0.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.resource.api_1.0.0.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.resource.api_1.0.0.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.roboticsAPI_1.15.2.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.roboticsAPI_1.15.2.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.roboticsAPI_1.15.2.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.roboticsAPI_1.15.2.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.roboticsAPI.handGuiding_1.16.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.roboticsAPI.handGuiding_1.16.0.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.roboticsAPI.handGuiding_1.16.0.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.roboticsAPI.handGuiding_1.16.0.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.statuscontroller_1.1.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.statuscontroller_1.1.0.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.statuscontroller_1.1.0.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.statuscontroller_1.1.0.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.statuscontroller.statusgroups_1.1.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.statuscontroller.statusgroups_1.1.0.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.statuscontroller.statusgroups_1.1.0.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.statuscontroller.statusgroups_1.1.0.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.sunrise.common_1.0.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.sunrise.common_1.0.0.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.sunrise.common_1.0.0.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.sunrise.common_1.0.0.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.task.api_1.0.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.task.api_1.0.0.16.jar">
 		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.task.api_1.0.0.RapiSMedV12_9-javadoc.jar!/"/>
+			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.task.api_1.0.0.16-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.jogging.provider.api_1.0.0.RapiSMedV12_9.jar">
+	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.jogging.provider.api_1.0.0.16.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/#Bundle-JavaDoc#!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="KUKAJavaLib/com.kuka.med.trocarHandguiding_1.15.0.SMedV121-0-0_17.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/MarkerNavigationIiwa/KUKAJavaLib/com.kuka.med.trocarHandguiding_1.15.0.SMedV121-0-0_17-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="output" path="bin"/>

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<KukaDeviceDescriptionResource xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" fileCreationDate="0001-01-01" fileCreationTime="00:00:00.0000000+01:00">
+<KukaDeviceDescriptionResource xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" fileCreationDate="0001-01-01" fileCreationTime="00:00:00.0000000+02:00">
   <Language lcId="1031" />
   <Vendor name="KUKA Roboter GmbH" />
   <Device name="Sicherheitssteuerung" description="Verarbeitet alle sicherheitsgerichteten Signale">

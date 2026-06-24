@@ -4,13 +4,14 @@
     <Engine Class="com.kuka.roboticsAPI.uiModel.UIEngine"/>
     <DataSource Class="com.kuka.roboticsAPI.persistenceModel.XmlApplicationDataSource" DataFile="RoboticsAPI.data.xml" Name="robotApplicationDataSource"/>
     <Controller Class="com.kuka.roboticsAPI.controllerModel.sunrise.SunriseController" KeepAliveSendTimeout="5000" Name="KUKA_Sunrise_Cabinet_1" NameserverAddress="172.18.0.2" NameserverPort="23456">
+<<<<<<< Updated upstream
         <Mapper Class="com.kuka.connectivity.controllerModel.directServo.DirectServoMapper"/>
         <Mapper Class="com.kuka.connectivity.fastRobotInterface.FRIMotionOverlayMapper"/>
         <Mapper Class="com.kuka.connectivity.controllerModel.sunrise.smartServo.SmartServoMapper"/>
         <Mapper Class="com.kuka.connectivity.controllerModel.smartServoLIN.SmartServoLINMapper"/>
+=======
+>>>>>>> Stashed changes
         <Mapper Class="com.kuka.roboticsAPI.controllerModel.sunrise.mapping.HandGuidingControlModeMapper"/>
         <Mapper Class="com.kuka.roboticsAPI.controllerModel.sunrise.mapping.HandGuidingMapper"/>
-        <Mapper Class="com.kuka.roboticsAPI.controllerModel.sunrise.mapping.TrocarJointImpedanceControlModeMapper"/>
-        <Mapper Class="com.kuka.roboticsAPI.controllerModel.sunrise.mapping.TrocarHandGuidingMapper"/>
     </Controller>
 </RoboticsAPI>
