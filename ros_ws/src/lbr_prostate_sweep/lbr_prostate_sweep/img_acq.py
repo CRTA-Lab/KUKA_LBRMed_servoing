@@ -143,11 +143,11 @@ class ImageAquisition(Node):
             # KUKA uses zy'x'' notation of euler angles
             rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
             angle = rot.as_euler('ZYX',degrees=False)[2]
-            if abs(angle) > 0.7854 and not self.edge_flag and self.edge_counter < 2:
-                self.edge_client.call_async(Trigger.Request())
-                self.edge_flag = True
-                self.edge_counter += 1
-            else: self.edge_flag = False
+            # if abs(angle) > 0.7854 and not self.edge_flag and self.edge_counter < 2:
+            #     self.edge_client.call_async(Trigger.Request())
+            #     self.edge_flag = True
+            #     self.edge_counter += 1
+            # elif abs(angle) < 0.7854: self.edge_flag = False
         except Exception as e:
             self.get_logger().warning('dogodila se graska : {}'.format(e))
             try:

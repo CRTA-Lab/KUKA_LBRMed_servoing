@@ -111,6 +111,8 @@ class MicrosegnetNode(Node):
         self.start_recording=False
         self.trigger_counter=0
 
+        self.edge_flag = False
+
     #Read the data callback
     def read_ultrasound_callback(self, msg):
 
@@ -163,65 +165,69 @@ class MicrosegnetNode(Node):
                     self.blank_images_counter+=1*msg.force_in_range
                     self.good_images_counter = 0
                     #If there is 4 frames without annotations
-                    if self.blank_images_counter >= 2 and abs(self.image_angle) > 0.26:
-                        
-                        if self.switch_rotation==False and not self.future_flag:
-
-                            self.trigger_counter+=1
-
-                            if self.trigger_counter==1:
-                                    self.start_recording=True
-                            if self.trigger_counter==2:
-                                    self.start_recording=False
-                                    #self.trigger_counter=0
-                                    
-                                    
-
-
-                            # Create a Trigger request to switch rotation 
-                            request = Trigger.Request()
-                            self.get_logger().info('Switching the sweep direction.')
-                            self.future_flag = True
-                            
-                            # Send the request asynchronously
-                            future = self.client_change_direction.call_async(request)
-
-                            # Add a callback to handle the response
-                            future.add_done_callback(self.response_callback)
-                            self.switch_rotation=True
-                            if self.trigger_counter==2:
-                                 #line for copying the data to the network share
-                                #os.system('/home/racunalo/copy.sh ')
-                                pass
-
-                            #     sinko_dir = '/run/user/1000/gvfs/smb-share:server=synko.local,share=slike/slike_zavrsna_konfa/vtk'
-                            #     if os.path.exists(sinko_dir):
-                            #         shutil.rmtree(sinko_dir)
-                            #     #os.mkdir(sinko_dir, exist_ok=True)
-                            #     self.get_logger().info(f'Copying data to {sinko_dir}')
-                            #     ret = os.system(f'cp -r {self.MAIN_DIRECTORY_NAME} run/user/1000/gvfs/smb-share\:server\=synko.local\,share\=slike/slike_zavrsna_konfa/')
-                            #     self.get_logger().info(f'Copying data to {sinko_dir} with output {ret}')
-                            #     # shutil.copytree(self.INPUT_IMAGES_DIRECTORY, f'{sinko_dir}/input_images')
-                            #     # shutil.copytree(self.OUTPUT_MASKS_DIRECTORY, f'{sinko_dir}/output_images')
-                            #     # shutil.copytree(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f'{sinko_dir}/output')
-                            #     self.trigger_counter=0
-
-                    
-                    if self.start_sweep_recording==True:
-                            self.start_sweep_recording=False       
-
+                    #if self.blank_images_counter >= 2 and abs(self.image_angle) > 0.26:
                 else:
                     #Model predictions
                     out = torch.sigmoid(outputs).squeeze()
                     pred = out.cpu().detach().numpy()
                     self.good_images_counter += 1*msg.force_in_range       
 
-                    if self.good_images_counter >=3:
-                        self.blank_images_counter=0
-                        self.switch_rotation=False
+                    # if self.good_images_counter >=3:
+                    #     self.blank_images_counter=0
+                    #     self.switch_rotation=False
 
-                    if self.start_sweep_recording==False:
-                            self.start_sweep_recording=True
+                    # if self.start_sweep_recording==False:
+                    #         self.start_sweep_recording=True
+                if abs(self.image_angle) > 0.78 and not self.edge_flag:
+                    self.edge_flag = True
+                    
+                    if not self.future_flag:
+
+                        self.trigger_counter+=1
+
+                        if self.trigger_counter==1:
+                                self.start_recording=True
+                        if self.trigger_counter==2:
+                                self.start_recording=False
+                                #self.trigger_counter=0
+                                
+                                
+
+
+                        # Create a Trigger request to switch rotation 
+                        request = Trigger.Request()
+                        self.get_logger().info('Switching the sweep direction.')
+                        self.future_flag = True
+                        
+                        # Send the request asynchronously
+                        future = self.client_change_direction.call_async(request)
+
+                        # Add a callback to handle the response
+                        future.add_done_callback(self.response_callback)
+                        self.switch_rotation=True
+                        if self.trigger_counter==2:
+                                #line for copying the data to the network share
+                            #os.system('/home/racunalo/copy.sh ')
+                            pass
+
+                        #     sinko_dir = '/run/user/1000/gvfs/smb-share:server=synko.local,share=slike/slike_zavrsna_konfa/vtk'
+                        #     if os.path.exists(sinko_dir):
+                        #         shutil.rmtree(sinko_dir)
+                        #     #os.mkdir(sinko_dir, exist_ok=True)
+                        #     self.get_logger().info(f'Copying data to {sinko_dir}')
+                        #     ret = os.system(f'cp -r {self.MAIN_DIRECTORY_NAME} run/user/1000/gvfs/smb-share\:server\=synko.local\,share\=slike/slike_zavrsna_konfa/')
+                        #     self.get_logger().info(f'Copying data to {sinko_dir} with output {ret}')
+                        #     # shutil.copytree(self.INPUT_IMAGES_DIRECTORY, f'{sinko_dir}/input_images')
+                        #     # shutil.copytree(self.OUTPUT_MASKS_DIRECTORY, f'{sinko_dir}/output_images')
+                        #     # shutil.copytree(self.OUTPUT_SEGMENTATIONS_DIRECTORY, f'{sinko_dir}/output')
+                        #     self.trigger_counter=0
+
+                elif abs(self.image_angle) < 0.6:
+                    self.edge_flag = False
+                    # if self.start_sweep_recording==True:
+                    #         self.start_sweep_recording=False       
+
+                
 
                 
                 #self.get_logger().info('Recording!')
