@@ -8,6 +8,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.qos import qos_profile_system_default
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener 
+from std_srvs.srv import Trigger
 from geometry_msgs.msg import Vector3Stamped, WrenchStamped
 from sensor_msgs.msg import JointState
 from custom_interfaces.msg import ImageMeta
@@ -40,12 +41,17 @@ class ImageAquisition(Node):
         #TODO vratiti na staro
         self.create_subscription(WrenchStamped,'/ft_sensor_data',self.ft_callback,qos_profile_system_default,callback_group=self.pub_sub_cbg)
 
+        self.edge_client = self.create_client(Trigger, '/sweep/edge_trigger', callback_group=self.pub_sub_cbg)
+
         # timer for periodicaly captureing the image from US
         self.init_socket()
         self.create_timer(1/20,self.tcp_img_acq)
 
         #TODO vratit na staro
         self.force_in_range = False
+
+        self.edge_flag = False
+        self.edge_counter = 0
 
         
 
@@ -137,6 +143,11 @@ class ImageAquisition(Node):
             # KUKA uses zy'x'' notation of euler angles
             rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
             angle = rot.as_euler('ZYX',degrees=False)[2]
+            if abs(angle) > 0.7854 and not self.edge_flag and self.edge_counter < 2:
+                self.edge_client.call_async(Trigger.Request())
+                self.edge_flag = True
+                self.edge_counter += 1
+            else: self.edge_flag = False
         except Exception as e:
             self.get_logger().warning('dogodila se graska : {}'.format(e))
             try:

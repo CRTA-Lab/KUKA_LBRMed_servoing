@@ -189,7 +189,11 @@ class MicrosegnetNode(Node):
                             # Add a callback to handle the response
                             future.add_done_callback(self.response_callback)
                             self.switch_rotation=True
-                            if self.trigger_counter==2: os.system('/home/racunalo/copy.sh ')
+                            if self.trigger_counter==2:
+                                 #line for copying the data to the network share
+                                #os.system('/home/racunalo/copy.sh ')
+                                pass
+
                             #     sinko_dir = '/run/user/1000/gvfs/smb-share:server=synko.local,share=slike/slike_zavrsna_konfa/vtk'
                             #     if os.path.exists(sinko_dir):
                             #         shutil.rmtree(sinko_dir)
