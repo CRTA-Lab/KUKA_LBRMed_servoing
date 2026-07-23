@@ -1,4 +1,4 @@
-<img src=https://pronobis.crta-robotics.com/_ipx/w_896/gallery/secondary_blue.svg >
+<img src=https://pronobis.crta-robotics.com/_ipx/w_896/gallery/secondary_blue.svg alt="project logo" height="350">
 
 # PRONOBIS robot interface
 
@@ -64,7 +64,7 @@ ros2 launch lbr_prostate_sweep sweep.launch.py
 ## Note
 This module is part of the PRONOBIS project, one of CRTA's (Regional Center of Excellence for Robotic Technology) projects. Please check out the [project website](https://pronobis.crta-robotics.com/) as well as [CRTA website](https://crta-robotics.com/en) in order to learn more. Reach out to us if you would like to collaborate.
 
-<img src=https://crta-robotics.com/wp-content/uploads/2025/01/logo-231x300.webp>
-<img src=https://crta-robotics.com/wp-content/uploads/2025/10/Logo_eng-768x239.png>
+<img src=https://crta-robotics.com/wp-content/uploads/2025/01/logo-231x300.webp alt="CRTA logo" height="150">
+<img src=https://crta-robotics.com/wp-content/uploads/2025/10/Logo_eng-768x239.png alt="FSB logo" height="150">
 
-<img src=https://pronobis.crta-robotics.com/_ipx/w_300/EU.svg>
+<img src=https://pronobis.crta-robotics.com/_ipx/w_300/EU.svg alt="EU logo" height="150">
