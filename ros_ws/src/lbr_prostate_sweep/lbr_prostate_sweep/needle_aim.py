@@ -44,6 +44,8 @@ class AimNode(Node):
         self.start_flag = False
         self.target_flag = False
 
+        self.acc_scan_flag = False
+
         self.get_logger().info('Init done')
         return
     
@@ -60,25 +62,64 @@ class AimNode(Node):
     
     def next_target(self,request:Trigger.Request,response:Trigger.Response):
         response.success = True
-        self.target_no += 1
-        self.target_flag = False
-        if self.target_no > len(self.targets):
-            self.destroy_node()
+        if self.acc_scan_flag:
+            self.acc_scan_flag = False
+            self.target_no += 1
+            self.target_flag = False
+            if self.target_no > len(self.targets):
+                self.get_logger().info('All targets reached, shutting down node')
+                self.destroy_node()
+        else:
+            self.acc_scan_flag = True
+            self.scan_acc()
         return response
     
+
+    def find_angle(self,deg = False):
+        transform = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
+        rot = Rotation.from_quat([transform.transform.rotation.x, transform.transform.rotation.y, transform.transform.rotation.z, transform.transform.rotation.w])
+        angle = rot.as_euler('ZYX',degrees=deg)[2]
+        return angle
+
+
+    def scan_acc(self):
+        current_angle = self.find_angle(True)
+        start_angle = current_angle
+        back_flag = False
+        go_flag = True
+        while go_flag:
+            msg = TwistStamped()
+            msg.twist.angular.x = 0.5 - (1*back_flag)
+            msg.header.stamp = self.get_clock().now().to_msg()
+            self.twist_pub.publish(msg)
+            rclpy.spin_once(self,timeout_sec=0.1)
+            current_angle = self.find_angle(True)
+            if abs(current_angle - start_angle) > 5 and not back_flag:
+                back_flag = True
+            elif abs(current_angle - start_angle) > 5 and back_flag:
+                go_flag = False
+                msg = TwistStamped()
+                msg.twist.angular.x = 0.0
+                msg.header.stamp = self.get_clock().now().to_msg()
+                self.twist_pub.publish(msg)
+                self.get_logger().info('Scan done')
+
+
+
     
     def aim(self):
         if not self.start_flag:return
         
-        trans = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
+        # trans = self.tf_buffer.lookup_transform(self.base_frame,self.TCP_frame,rclpy.time.Time())
 
-        # transforming obtainede quternion rotations of TCP to euler and extracting the rotation around the axis of the probe
-        # KUKA uses zy'x'' notation of euler angles
-        rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
-        angle = rot.as_euler('ZYX',degrees=False)[2]
+        # # transforming obtained quaternion rotations of TCP to euler and extracting the rotation around the axis of the probe
+        # # KUKA uses zy'x'' notation of euler angles
+        # rot = Rotation.from_quat([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])
+        # angle = rot.as_euler('ZYX',degrees=False)[2]
+        angle = self.find_angle()
         delta = self.targets[self.target_no][2] - angle
-        self.get_logger().info('Current angle: {}\tTarget angle: {}\tDelta: {}'.format(angle,self.targets[self.target_no][2],delta))
         if abs(delta) > 0.001 and not self.target_flag:
+            self.get_logger().info('Current angle: {}\tTarget angle: {}\tDelta: {}'.format(angle,self.targets[self.target_no][2],delta))
             msg = TwistStamped()
             ctrl = 50*delta
             if ctrl > 1:
