@@ -88,6 +88,7 @@ def generate_launch_description():
         package='lbr_prostate_sweep',
         executable='needle_aim',
         output='log',
+        parameters=[{'data_logger_path': log_dir}]
     )
 
     ])

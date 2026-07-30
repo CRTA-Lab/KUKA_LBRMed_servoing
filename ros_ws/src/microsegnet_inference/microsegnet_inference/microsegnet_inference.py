@@ -54,7 +54,9 @@ class MicrosegnetNode(Node):
         # files = list(filter(os.path.isdir, glob.glob(dir + '*')))
         # files.sort(key=os.path.getmtime, reverse=True)
         # main_dir = files[0] if len(files) > 0 else dir
-        main_dir = f'{dir}/zavrsna_konfa'
+        #main_dir = f'{dir}/zavrsna_konfa'
+        self.declare_parameter('data_logger_path', '/home/racunalo/KUKA_LBRMed_servoing/logs/')
+        main_dir = self.get_parameter('data_logger_path').get_parameter_value().string_value
         MAIN_DIRECTORY_NAME=f'{main_dir}/vtk'
         self.INPUT_IMAGES_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/input_images"
         self.OUTPUT_MASKS_DIRECTORY=f"{MAIN_DIRECTORY_NAME}/output_images"

@@ -1,3 +1,5 @@
+import os
+
 import rclpy
 import rclpy.action
 from rclpy.node import Node
@@ -5,9 +7,11 @@ from rclpy.qos import qos_profile_system_default,qos_profile_sensor_data
 from rclpy.callback_groups import ReentrantCallbackGroup
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener 
+import cv2
+from cv_bridge import CvBridge
 from geometry_msgs.msg import TwistStamped
 from std_srvs.srv import Trigger
-from custom_interfaces.srv import Target
+from custom_interfaces.srv import Target, ImageMeta
 import numpy as np
 from scipy.spatial.transform import Rotation
 import time
@@ -18,13 +22,19 @@ class AimNode(Node):
     def __init__(self):
         super().__init__('AimNode')
 
-        # start CvBridge for converting between images and ros msgs
         self.pub_sub_cbg = ReentrantCallbackGroup()
         self.serv_cbg = ReentrantCallbackGroup()
-        # create subscription on the US_image topic
+
+        self.declare_parameter('data_logger_path', '/home/racunalo/KUKA_LBRMed_servoing/logs/')
+        self.data_logger_path = self.get_parameter('data_logger_path').get_parameter_value().string_value
+        self.get_logger().info(f'Logging data to: {self.data_logger_path}')
+
 
         # create publisher for moveit servo delta_twist_cmds topic
         self.twist_pub = self.create_publisher(TwistStamped,'/twist_cmd',qos_profile_sensor_data,callback_group=self.pub_sub_cbg)
+
+        
+        
 
         self.target_serv = self.create_service(Target,'/sweep/target',self.store_target,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
         self.start_serv = self.create_service(Trigger,'/sweep/begin_biopsy',self.start_biopsy,qos_profile=qos_profile_system_default,callback_group=self.serv_cbg)
@@ -46,6 +56,9 @@ class AimNode(Node):
 
         self.acc_scan_flag = False
 
+        self.image = None
+        self.img_angle = 0
+
         self.get_logger().info('Init done')
         return
     
@@ -58,6 +71,8 @@ class AimNode(Node):
     def start_biopsy(self,request:Trigger.Request,response:Trigger.Response):
         response.success = True
         self.start_flag = True
+        self.bridge = CvBridge()
+        self.img_sub = self.create_subscription(ImageMeta,'/US_image',self.img_callback,qos_profile=qos_profile_sensor_data,callback_group=self.pub_sub_cbg)
         return response
     
     def next_target(self,request:Trigger.Request,response:Trigger.Response):
@@ -82,11 +97,19 @@ class AimNode(Node):
         return angle
 
 
+    def img_callback(self,msg:ImageMeta):
+        image = msg.image
+        self.image = self.bridge.imgmsg_to_cv2(image)
+        self.img_angle = msg.angle
+        return
+
     def scan_acc(self):
         current_angle = self.find_angle(True)
         start_angle = current_angle
         back_flag = False
         go_flag = True
+        os.makedirs(self.data_logger_path + f'/acc_scan/target{self.target_no}', exist_ok=True)
+        
         while go_flag:
             msg = TwistStamped()
             msg.twist.angular.x = 0.5 - (1*back_flag)
@@ -103,6 +126,8 @@ class AimNode(Node):
                 msg.header.stamp = self.get_clock().now().to_msg()
                 self.twist_pub.publish(msg)
                 self.get_logger().info('Scan done')
+            elif back_flag:
+                cv2.imwrite(self.data_logger_path + f'/acc_scan/target{self.target_no}/slice_{self.img_angle}.png', self.image)
 
 
 
