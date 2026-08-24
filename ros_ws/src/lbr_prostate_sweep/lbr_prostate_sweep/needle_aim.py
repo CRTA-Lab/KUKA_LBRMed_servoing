@@ -11,7 +11,8 @@ import cv2
 from cv_bridge import CvBridge
 from geometry_msgs.msg import TwistStamped
 from std_srvs.srv import Trigger
-from custom_interfaces.srv import Target, ImageMeta
+from custom_interfaces.srv import Target
+from custom_interfaces.msg import ImageMeta
 import numpy as np
 from scipy.spatial.transform import Rotation
 import time
@@ -119,6 +120,14 @@ class AimNode(Node):
             current_angle = self.find_angle(True)
             if abs(current_angle - start_angle) > 5 and not back_flag:
                 back_flag = True
+                self.get_logger().info('Back flag set, returning to start angle')
+                while abs(current_angle - start_angle) > 5:
+                    msg = TwistStamped()
+                    msg.twist.angular.x = -0.5
+                    msg.header.stamp = self.get_clock().now().to_msg()
+                    self.twist_pub.publish(msg)
+                    current_angle = self.find_angle(True)
+                    rclpy.spin_once(self,timeout_sec=0.1)
             elif abs(current_angle - start_angle) > 5 and back_flag:
                 go_flag = False
                 msg = TwistStamped()
