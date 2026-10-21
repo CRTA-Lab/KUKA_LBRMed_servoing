@@ -118,17 +118,17 @@ class AimNode(Node):
             self.twist_pub.publish(msg)
             rclpy.spin_once(self,timeout_sec=0.1)
             current_angle = self.find_angle(True)
-            if abs(current_angle - start_angle) > 5 and not back_flag:
+            if abs(current_angle - start_angle) > 3 and not back_flag:
                 back_flag = True
                 self.get_logger().info('Back flag set, returning to start angle')
-                while abs(current_angle - start_angle) > 5:
+                while abs(current_angle - start_angle) > 3:
                     msg = TwistStamped()
                     msg.twist.angular.x = -0.5
                     msg.header.stamp = self.get_clock().now().to_msg()
                     self.twist_pub.publish(msg)
                     current_angle = self.find_angle(True)
                     rclpy.spin_once(self,timeout_sec=0.1)
-            elif abs(current_angle - start_angle) > 5 and back_flag:
+            elif abs(current_angle - start_angle) > 3 and back_flag:
                 go_flag = False
                 msg = TwistStamped()
                 msg.twist.angular.x = 0.0
@@ -169,7 +169,7 @@ class AimNode(Node):
             msg.header.stamp = self.get_clock().now().to_msg()
             self.twist_pub.publish(msg) 
             self.get_logger().info('Target  reached')
-            self.get_logger().info('Rupa br : {}\tDubina : {}'.format(round(self.targets[self.target_no][1]/5, 0)+1, (60-self.targets[self.target_no][0])+82))
+            self.get_logger().info('Rupa br : {}\tDubina : {}'.format(round((self.targets[self.target_no][1]/12)/5, 0)+1, (60-self.targets[self.target_no][0]/12)+82))
             self.target_flag = True
 
 

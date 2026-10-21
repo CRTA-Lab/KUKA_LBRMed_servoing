@@ -180,7 +180,7 @@ class MicrosegnetNode(Node):
 
                     # if self.start_sweep_recording==False:
                     #         self.start_sweep_recording=True
-                if abs(self.image_angle) > 0.9 and not self.edge_flag:
+                if abs(self.image_angle) > 0.95 and not self.edge_flag:
                     self.edge_flag = True
                     
                     if not self.future_flag:
